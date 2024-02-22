@@ -65,24 +65,27 @@ def import_flow(u_path, v_path, w_path):
             timestep = slices[Nz * i : Nz * (i + 1)]
             timestep.sort(key=lambda s: s.SliceLocation)
             for j in range(Nz):
-                img2d = timestep[j].pixel_array
+                img_step = timestep[j]
+                img2d = (
+                    img_step.pixel_array * img_step.RescaleSlope
+                    + img_step.RescaleIntercept
+                )
                 img4d[:, :, j, i] = img2d
 
-        for i in range(Nt):
-            # plot 3 orthogonal slices to check for correct indexing
-            a1 = plt.subplot(2, 2, 1)
-            plt.imshow(img4d[:, :, img_shape[2] // 2, i], cmap="gray")
-            a1.set_aspect(ax_aspect)
+        # plot 3 orthogonal slices to check for correct indexing
+        a1 = plt.subplot(2, 2, 1)
+        plt.imshow(img4d[:, :, img_shape[2] // 2, 5], cmap="gray")
+        a1.set_aspect(ax_aspect)
 
-            a2 = plt.subplot(2, 2, 2)
-            plt.imshow(img4d[:, img_shape[1] // 2, :, i], cmap="gray")
-            a2.set_aspect(sag_aspect)
+        a2 = plt.subplot(2, 2, 2)
+        plt.imshow(img4d[:, img_shape[1] // 2, :, 5], cmap="gray")
+        a2.set_aspect(sag_aspect)
 
-            a3 = plt.subplot(2, 2, 3)
-            plt.imshow(img4d[img_shape[0] // 2, :, :, i].T, cmap="gray")
-            a3.set_aspect(cor_aspect)
+        a3 = plt.subplot(2, 2, 3)
+        plt.imshow(img4d[img_shape[0] // 2, :, :, 5].T, cmap="gray")
+        a3.set_aspect(cor_aspect)
 
-            plt.show()
+        plt.show()
 
         # fill 4D array with the images from the files
 
@@ -182,15 +185,16 @@ class Patient4DFlow:
 
         # PROBABLY GOING TO BE TEMPORARY CODE AS I WORK THINGS OUT
         self.segmentation = np.transpose(self.segmentation, (1, 0, 2))
+        self.segmentation = np.flip(self.segmentation, axis=2)
         nrrd.write("Segmentation_transposed.nrrd", self.segmentation)
 
     def check_orientation(self):
 
         mag = self.mag_data[:, :, :, 6].copy()
 
-        u = self.flow_data[0, :, :, :, 6].copy()  # *self.segmentation
-        v = self.flow_data[1, :, :, :, 6].copy()  # *self.segmentation
-        w = self.flow_data[2, :, :, :, 6].copy()  # *self.segmentation
+        u = self.flow_data[0, :, :, :, 6].copy() * self.segmentation
+        v = self.flow_data[1, :, :, :, 6].copy() * self.segmentation
+        w = self.flow_data[2, :, :, :, 6].copy() * self.segmentation
         vel = (u, v, w)
 
         imageToVTK("UM19_check_mag", cellData={"Magnitude": mag})
