@@ -27,10 +27,10 @@ def import_flow(u_path, v_path, w_path):
         files = []
         print(f"glob: {paths[i]}")
         for fname in glob.glob(paths[i], recursive=False):
-            print(f"loading: {fname}")
+            print(f"loading: {fname}", end="\r")
             files.append(pydicom.dcmread(fname))
 
-        print(f"file count: {len(files)}")
+        print(f"\nfile count: {len(files)}")
 
         # skip files with no SliceLocation (eg scout views)
         slices = []
@@ -44,7 +44,7 @@ def import_flow(u_path, v_path, w_path):
         print(f"skipped, no SliceLocation: {skipcount}")
 
         # ensure they are in the correct order
-        slices = sorted(slices, key=lambda s: (s.TriggerTime, s.SliceLocation))
+        slices.sort(key=lambda s: (s.TriggerTime, s.SliceLocation))
 
         # pixel aspects, assuming all slices are the same
         ps = slices[0].PixelSpacing
@@ -61,26 +61,30 @@ def import_flow(u_path, v_path, w_path):
         img_shape.append(Nz)
         img4d = np.zeros((img_shape[0], img_shape[1], Nz, Nt))
 
-        # fill 4D array with the images from the files
         for i in range(Nt):
+            timestep = slices[Nz * i : Nz * (i + 1)]
+            timestep.sort(key=lambda s: s.SliceLocation)
             for j in range(Nz):
-                img2d = slices[Nt * i + j].pixel_array
+                img2d = timestep[j].pixel_array
                 img4d[:, :, j, i] = img2d
 
-        # plot 3 orthogonal slices to check for correct indexing
-        a1 = plt.subplot(2, 2, 1)
-        plt.imshow(img4d[:, :, img_shape[2] // 2, 0], cmap="gray")
-        a1.set_aspect(ax_aspect)
+        for i in range(Nt):
+            # plot 3 orthogonal slices to check for correct indexing
+            a1 = plt.subplot(2, 2, 1)
+            plt.imshow(img4d[:, :, img_shape[2] // 2, i], cmap="gray")
+            a1.set_aspect(ax_aspect)
 
-        a2 = plt.subplot(2, 2, 2)
-        plt.imshow(img4d[:, img_shape[1] // 2, :, 0], cmap="gray")
-        a2.set_aspect(sag_aspect)
+            a2 = plt.subplot(2, 2, 2)
+            plt.imshow(img4d[:, img_shape[1] // 2, :, i], cmap="gray")
+            a2.set_aspect(sag_aspect)
 
-        a3 = plt.subplot(2, 2, 3)
-        plt.imshow(img4d[img_shape[0] // 2, :, :, 0].T, cmap="gray")
-        a3.set_aspect(cor_aspect)
+            a3 = plt.subplot(2, 2, 3)
+            plt.imshow(img4d[img_shape[0] // 2, :, :, i].T, cmap="gray")
+            a3.set_aspect(cor_aspect)
 
-        plt.show()
+            plt.show()
+
+        # fill 4D array with the images from the files
 
         img5d.append(img4d)
 
@@ -92,10 +96,10 @@ def import_dicoms(dicom_path):
     files = []
     print(f"glob: {dicom_path}")
     for fname in glob.glob(dicom_path, recursive=False):
-        print(f"loading: {fname}")
+        print(f"loading: {fname}", end="\r")
         files.append(pydicom.dcmread(fname))
 
-    print(f"file count: {len(files)}")
+    print(f"\nfile count: {len(files)}")
 
     # skip files with no SliceLocation (eg scout views)
     slices = []
@@ -109,7 +113,7 @@ def import_dicoms(dicom_path):
     print(f"skipped, no SliceLocation: {skipcount}")
 
     # ensure they are in the correct order
-    slices = sorted(slices, key=lambda s: (s.TriggerTime, s.SliceLocation))
+    slices.sort(key=lambda s: (s.TriggerTime, s.SliceLocation))
 
     # pixel aspects, assuming all slices are the same
     ps = slices[0].PixelSpacing
@@ -128,21 +132,23 @@ def import_dicoms(dicom_path):
 
     # fill 3D array with the images from the files
     for i in range(Nt):
+        timestep = slices[Nz * i : Nz * (i + 1)]
+        timestep.sort(key=lambda s: s.SliceLocation)
         for j in range(Nz):
-            img2d = slices[Nt * i + j].pixel_array
+            img2d = timestep[j].pixel_array
             img4d[:, :, j, i] = img2d
 
     # plot 3 orthogonal slices to check for correct indexing
     a1 = plt.subplot(2, 2, 1)
-    plt.imshow(img4d[:, :, img_shape[2] // 2, 0], cmap="gray")
+    plt.imshow(img4d[:, :, img_shape[2] // 2, 5], cmap="gray")
     a1.set_aspect(ax_aspect)
 
     a2 = plt.subplot(2, 2, 2)
-    plt.imshow(img4d[:, img_shape[1] // 2, :, 0], cmap="gray")
+    plt.imshow(img4d[:, img_shape[1] // 2, :, 5], cmap="gray")
     a2.set_aspect(sag_aspect)
 
     a3 = plt.subplot(2, 2, 3)
-    plt.imshow(img4d[img_shape[0] // 2, :, :, 0].T, cmap="gray")
+    plt.imshow(img4d[img_shape[0] // 2, :, :, 5].T, cmap="gray")
     a3.set_aspect(cor_aspect)
 
     plt.show()
@@ -151,25 +157,28 @@ def import_dicoms(dicom_path):
 
 
 class Patient4DFlow:
-    def __init__(self, ID):
+    def __init__(self, ID, data_directory):
         self.ID = ID
+        self.dir = data_directory
         self.mag_data = ""
         self.flow_data = ""
         self.segmentation = ""
 
     def add_mag(self):
         mag_path = input("Enter relative path to magnitude data: ")
-        self.mag_data = import_dicoms(mag_path)
+        self.mag_data = import_dicoms(self.dir + mag_path)
 
     def add_flow(self):
         u_path = input("Enter relative path to u data: ")
         v_path = input("Enter relative path to v data: ")
         w_path = input("Enter relative path to w data: ")
-        self.flow_data = import_flow(u_path, v_path, w_path)
+        self.flow_data = import_flow(
+            self.dir + u_path, self.dir + v_path, self.dir + w_path
+        )
 
     def add_segmentation(self):
         seg_path = input("Enter relative path to segmentation: ")
-        self.segmentation = import_segmentation(seg_path)
+        self.segmentation = import_segmentation(self.dir + seg_path)
 
         # PROBABLY GOING TO BE TEMPORARY CODE AS I WORK THINGS OUT
         self.segmentation = np.transpose(self.segmentation, (1, 0, 2))
@@ -218,14 +227,17 @@ def main():
     # NOTE: I'm currently having a user input the paths directly, but this could definitely get tedious (especially since DICOM paths are fucking evil and not even close to being straightforward/intuitive).
     # I will definitely want to automate this process but unfortunately, again, DICOMs are fucking evil and I don't know how to parse their metadata completely yet...
 
-    patient_UM19 = Patient4DFlow("UM19")
+    patient_UM19 = Patient4DFlow(
+        "UM19",
+        "/Users/bkhardy/Dropbox (University of Michigan)/MRI_1.22.24/DICOM/0000A628/AAD75E3C/AA62C567/",
+    )
 
     patient_UM19.add_segmentation()
     patient_UM19.add_mag()
     patient_UM19.add_flow()
     patient_UM19.check_orientation()
 
-    # mag data in   00003965/*
+    # mag data in   00003965/*x
     # u data in     0000ED0F/*
     # v data in     0000D7F0/*
     # w data in     00004E45/*
