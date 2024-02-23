@@ -17,7 +17,7 @@ def import_segmentation(seg_path):
     return segmentation
 
 
-def import_flow(u_path, v_path, w_path):
+def import_flow(u_path, v_path, w_path, check=None):
 
     paths = [u_path, v_path, w_path]
     img5d = []
@@ -72,20 +72,22 @@ def import_flow(u_path, v_path, w_path):
                 )
                 img4d[:, :, j, i] = img2d
 
-        # plot 3 orthogonal slices to check for correct indexing
-        a1 = plt.subplot(2, 2, 1)
-        plt.imshow(img4d[:, :, img_shape[2] // 2, 5], cmap="gray")
-        a1.set_aspect(ax_aspect)
+        if check is not None:
 
-        a2 = plt.subplot(2, 2, 2)
-        plt.imshow(img4d[:, img_shape[1] // 2, :, 5], cmap="gray")
-        a2.set_aspect(sag_aspect)
+            # plot 3 orthogonal slices to check for correct indexing
+            a1 = plt.subplot(2, 2, 1)
+            plt.imshow(img4d[:, :, img_shape[2] // 2, check], cmap="gray")
+            a1.set_aspect(ax_aspect)
 
-        a3 = plt.subplot(2, 2, 3)
-        plt.imshow(img4d[img_shape[0] // 2, :, :, 5].T, cmap="gray")
-        a3.set_aspect(cor_aspect)
+            a2 = plt.subplot(2, 2, 2)
+            plt.imshow(img4d[:, img_shape[1] // 2, :, check], cmap="gray")
+            a2.set_aspect(sag_aspect)
 
-        plt.show()
+            a3 = plt.subplot(2, 2, 3)
+            plt.imshow(img4d[img_shape[0] // 2, :, :, check].T, cmap="gray")
+            a3.set_aspect(cor_aspect)
+
+            plt.show()
 
         # fill 4D array with the images from the files
 
@@ -94,7 +96,7 @@ def import_flow(u_path, v_path, w_path):
     return np.asarray(img5d)
 
 
-def import_dicoms(dicom_path):
+def import_dicoms(dicom_path, check=None):
     # load the DICOM files
     files = []
     print(f"glob: {dicom_path}")
@@ -141,20 +143,21 @@ def import_dicoms(dicom_path):
             img2d = timestep[j].pixel_array
             img4d[:, :, j, i] = img2d
 
-    # plot 3 orthogonal slices to check for correct indexing
-    a1 = plt.subplot(2, 2, 1)
-    plt.imshow(img4d[:, :, img_shape[2] // 2, 5], cmap="gray")
-    a1.set_aspect(ax_aspect)
+    if check is not None:
+        # plot 3 orthogonal slices to check for correct indexing
+        a1 = plt.subplot(2, 2, 1)
+        plt.imshow(img4d[:, :, img_shape[2] // 2, check], cmap="gray")
+        a1.set_aspect(ax_aspect)
 
-    a2 = plt.subplot(2, 2, 2)
-    plt.imshow(img4d[:, img_shape[1] // 2, :, 5], cmap="gray")
-    a2.set_aspect(sag_aspect)
+        a2 = plt.subplot(2, 2, 2)
+        plt.imshow(img4d[:, img_shape[1] // 2, :, check], cmap="gray")
+        a2.set_aspect(sag_aspect)
 
-    a3 = plt.subplot(2, 2, 3)
-    plt.imshow(img4d[img_shape[0] // 2, :, :, 5].T, cmap="gray")
-    a3.set_aspect(cor_aspect)
+        a3 = plt.subplot(2, 2, 3)
+        plt.imshow(img4d[img_shape[0] // 2, :, :, check].T, cmap="gray")
+        a3.set_aspect(cor_aspect)
 
-    plt.show()
+        plt.show()
 
     return img4d
 

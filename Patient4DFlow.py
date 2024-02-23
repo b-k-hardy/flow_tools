@@ -8,30 +8,50 @@ class Patient4DFlow:
     def __init__(self, ID, data_directory):
         self.ID = ID
         self.dir = data_directory
-        self.mag_data = ""
-        self.flow_data = ""
-        self.segmentation = ""
+        self.mag_data = self.add_mag(path_input="user")
+        self.flow_data = self.add_flow(path_input="user")
+        self.segmentation = self.add_segmentation(path_input="user")
 
-    def add_mag(self):
-        mag_path = input("Enter relative path to magnitude data: ")
-        self.mag_data = rd.import_dicoms(self.dir + mag_path)
+    def add_mag(self, path_input):
+        if path_input == "user":
+            mag_path = input("Enter relative path to magnitude data: ")
+        else:
+            mag_path = path_input
 
-    def add_flow(self):
-        u_path = input("Enter relative path to u data: ")
-        v_path = input("Enter relative path to v data: ")
-        w_path = input("Enter relative path to w data: ")
-        self.flow_data = rd.import_flow(
+        mag_data = rd.import_dicoms(self.dir + mag_path)
+
+        return mag_data
+
+    def add_flow(self, path_input):
+
+        if path_input == "user":
+            u_path = input("Enter relative path to u data: ")
+            v_path = input("Enter relative path to v data: ")
+            w_path = input("Enter relative path to w data: ")
+        else:
+            u_path, v_path, w_path = path_input
+
+        flow_data = rd.import_flow(
             self.dir + u_path, self.dir + v_path, self.dir + w_path
         )
 
-    def add_segmentation(self):
-        seg_path = input("Enter relative path to segmentation: ")
-        self.segmentation = rd.import_segmentation(self.dir + seg_path)
+        return flow_data
+
+    def add_segmentation(self, path_input):
+
+        if path_input == "user":
+            seg_path = input("Enter relative path to segmentation: ")
+        else:
+            seg_path = path_input
+
+        segmentation = rd.import_segmentation(self.dir + seg_path)
 
         # PROBABLY GOING TO BE TEMPORARY CODE AS I WORK THINGS OUT
-        self.segmentation = np.transpose(self.segmentation, (1, 0, 2))
-        self.segmentation = np.flip(self.segmentation, axis=2)
-        nrrd.write("Segmentation_transposed.nrrd", self.segmentation)
+        segmentation = np.transpose(segmentation, (1, 0, 2))
+        segmentation = np.flip(segmentation, axis=2)
+        nrrd.write("Segmentation_transposed.nrrd", segmentation)
+
+        return segmentation
 
     def check_orientation(self):
 
@@ -63,9 +83,6 @@ def main():
     )
 
     print(patient_UM19)
-    patient_UM19.add_segmentation()
-    patient_UM19.add_mag()
-    patient_UM19.add_flow()
     patient_UM19.check_orientation()
 
     # mag data in   00003965/*x

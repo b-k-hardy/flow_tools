@@ -2,3 +2,4 @@
 *.vti
 *.nrrd
 *.dcm
+*.pyc
