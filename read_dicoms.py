@@ -195,13 +195,13 @@ class Patient4DFlow:
         u = self.flow_data[0, :, :, :, 6].copy() * self.segmentation
         v = self.flow_data[1, :, :, :, 6].copy() * self.segmentation
         w = self.flow_data[2, :, :, :, 6].copy() * self.segmentation
-        vel = (u, v, w)
+        vel = (-w, v, u)
 
         imageToVTK("UM19_check_mag", cellData={"Magnitude": mag})
         imageToVTK("UM19_check_vel", cellData={"Velocity": vel})
 
         # unfortunately it seems like the only solution here is to write a timeframe to disk then load
-        # back in. That sucks and is inefficient but whatever. damn.
+        # back in. That sucks and is inefficient but whatever.
 
 
 def convert_vti(data_path, output_dir, output_filename):
@@ -228,8 +228,8 @@ def convert_vti(data_path, output_dir, output_filename):
 
 def main():
 
-    # NOTE: I'm currently having a user input the paths directly, but this could definitely get tedious (especially since DICOM paths are fucking evil and not even close to being straightforward/intuitive).
-    # I will definitely want to automate this process but unfortunately, again, DICOMs are fucking evil and I don't know how to parse their metadata completely yet...
+    # NOTE: I'm currently having a user input the paths directly, but this could definitely get tedious (especially since DICOM paths are evil and not even close to being straightforward/intuitive).
+    # I will definitely want to automate this process but unfortunately, again, DICOMs are evil and I don't know how to parse their metadata completely yet...
 
     patient_UM19 = Patient4DFlow(
         "UM19",
