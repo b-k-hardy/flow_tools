@@ -203,6 +203,9 @@ class Patient4DFlow:
         # unfortunately it seems like the only solution here is to write a timeframe to disk then load
         # back in. That sucks and is inefficient but whatever.
 
+    def __str__(self):
+        return f"Patient ID: {self.ID} @ location {self.dir}"
+
 
 def convert_vti(data_path, output_dir, output_filename):
 
