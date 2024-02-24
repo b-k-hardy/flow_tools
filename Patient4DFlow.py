@@ -1,15 +1,18 @@
-from pyevtk.hl import imageToVTK
-import read_dicoms as rd
 import nrrd
 import numpy as np
+from pyevtk.hl import imageToVTK
+
+import read_dicoms as rd
 
 
 class Patient4DFlow:
     def __init__(self, ID, data_directory):
         self.ID = ID
         self.dir = data_directory
-        self.mag_data = self.add_mag(path_input="user")
-        self.flow_data = self.add_flow(path_input="user")
+        self.mag_data, self.flow_data = rd.import_all_dicoms(self.dir)
+
+        # self.mag_data = self.add_mag(path_input="user")
+        # self.flow_data = self.add_flow(path_input="user")
         self.segmentation = self.add_segmentation(path_input="user")
 
     def add_mag(self, path_input):
@@ -32,7 +35,7 @@ class Patient4DFlow:
             u_path, v_path, w_path = path_input
 
         flow_data = rd.import_flow(
-            self.dir + u_path, self.dir + v_path, self.dir + w_path
+            (self.dir + u_path, self.dir + v_path, self.dir + w_path)
         )
 
         return flow_data

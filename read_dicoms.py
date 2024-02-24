@@ -1,12 +1,14 @@
-import pydicom
-import h5py
-import numpy as np
-import pyvista as pv
-import matplotlib.pyplot as plt
-from pathlib import Path
 import glob
-from pyevtk.hl import imageToVTK
+import os
+from pathlib import Path
+
+import h5py
+import matplotlib.pyplot as plt
 import nrrd
+import numpy as np
+import pydicom
+import pyvista as pv
+from pyevtk.hl import imageToVTK
 
 
 def import_segmentation(seg_path):
@@ -17,9 +19,8 @@ def import_segmentation(seg_path):
     return segmentation
 
 
-def import_flow(u_path, v_path, w_path, check=None):
+def import_flow(paths, vencs, phase_range=4096, check=None):
 
-    paths = [u_path, v_path, w_path]
     img5d = []
 
     for i in range(3):
@@ -61,8 +62,9 @@ def import_flow(u_path, v_path, w_path, check=None):
         img_shape.append(Nz)
         img4d = np.zeros((img_shape[0], img_shape[1], Nz, Nt))
 
-        for i in range(Nt):
-            timestep = slices[Nz * i : Nz * (i + 1)]
+        # NOTE I'M REPEATING INDICES WTF DUDE DUH THE ORDERING IS WRONG
+        for t in range(Nt):
+            timestep = slices[Nz * t : Nz * (t + 1)]
             timestep.sort(key=lambda s: s.SliceLocation)
             for j in range(Nz):
                 img_step = timestep[j]
@@ -70,7 +72,11 @@ def import_flow(u_path, v_path, w_path, check=None):
                     img_step.pixel_array * img_step.RescaleSlope
                     + img_step.RescaleIntercept
                 )
-                img4d[:, :, j, i] = img2d
+                img4d[:, :, j, t] = img2d
+
+        img4d = (
+            img4d / phase_range * vencs[i] / 100
+        )  # convert from phase data to velocity data in m/s
 
         if check is not None:
 
@@ -184,7 +190,54 @@ def convert_vti(data_path, output_dir, output_filename):
         imageToVTK(out_path, spacing=dx, cellData={"Velocity": vel})
 
 
+def import_all_dicoms(dir_path):
+
+    phase_encoding_IDs = ["ap", "rl", "fh", "in"]
+
+    # 1. Find all DICOM directories
+    dir_list = glob.glob(
+        "*/", root_dir=dir_path
+    )  # there might be a cleaner way to do this recursively, but for now this is okay -- or maybe I good use os module instead?
+    for dir_name in dir_list:
+
+        print(f"Checking {dir_name}")
+        fname = os.listdir(dir_path + dir_name)[0]
+        check_file = pydicom.dcmread(dir_path + dir_name + fname)
+
+        if "4dflow" in check_file.SeriesDescription.lower() and hasattr(
+            check_file, "SequenceName"
+        ):
+            wip = check_file.SequenceName
+            print(f"Found {wip}!")  # in, ap, fh
+
+            if wip[-2:] == "in":
+                u_path = dir_name + "*"
+                u_venc = int(wip[-5:-2])
+            elif wip[-2:] == "ap":
+                v_path = dir_name + "*"
+                v_venc = int(wip[-5:-2])
+            elif wip[-2:] == "fh":
+                w_path = dir_name + "*"
+                w_venc = int(wip[-5:-2])
+            else:
+                mag_path = dir_name + "*"
+
+    flow_paths = (dir_path + u_path, dir_path + v_path, dir_path + w_path)
+    vencs = (u_venc, v_venc, w_venc)
+
+    mag_data = import_dicoms(dir_path + mag_path)
+    flow_data = import_flow(flow_paths, vencs)
+
+    # 2. Check one file from each directory to check SequenceType
+    # 3. Stop checking loop when all relevant directories are found (mag, u, v, w)
+    # 4. Read in data from these four directories
+
+    return mag_data, flow_data
+
+
 def main():
+
+    # NEW GOAL: GO AHEAD AND TRY TO DEBUG A DICOM SEARCH TOOL
 
     # NOTE: I'm currently having a user input the paths directly, but this could definitely get tedious (especially since DICOM paths are evil and not even close to being straightforward/intuitive).
     # I will definitely want to automate this process but unfortunately, again, DICOMs are evil and I don't know how to parse their metadata completely yet...
@@ -194,6 +247,10 @@ def main():
     # u data in     0000ED0F/*
     # v data in     0000D7F0/*
     # w data in     00004E45/*
+
+    import_all_dicoms(
+        "/Users/bkhardy/Dropbox (University of Michigan)/MRI_1.22.24/DICOM/0000A628/AAD75E3C/AA62C567/"
+    )
 
 
 if __name__ == "__main__":
