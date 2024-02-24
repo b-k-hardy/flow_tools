@@ -2,13 +2,10 @@ import glob
 import os
 from pathlib import Path
 
-import h5py
 import matplotlib.pyplot as plt
 import nrrd
 import numpy as np
 import pydicom
-import pyvista as pv
-from pyevtk.hl import imageToVTK
 
 
 def import_segmentation(seg_path):
@@ -166,28 +163,6 @@ def import_dicoms(dicom_path, check=None):
         plt.show()
 
     return img4d
-
-
-def convert_vti(data_path, output_dir, output_filename):
-
-    Nt = 0
-    dx = 0
-
-    for t in range(Nt):
-        # open additional mat files mat file in series (silly string concatenation here...)
-        with h5py.File(data_path + f"_{t+1}.mat", "r") as f:
-            # get pointers for velocity struct
-            v_pointers = f["v"][:]
-
-            # access the images (matlab equivalent: v{1}.im)
-            u = f[v_pointers[0, 0]]["im"][:].T
-            v = f[v_pointers[1, 0]]["im"][:].T
-            w = f[v_pointers[2, 0]]["im"][:].T
-
-        # write velocity field one timestep at a time
-        vel = (u, v, w)
-        out_path = f"{output_dir}/{output_filename}_{t:03d}"
-        imageToVTK(out_path, spacing=dx, cellData={"Velocity": vel})
 
 
 def import_all_dicoms(dir_path):
