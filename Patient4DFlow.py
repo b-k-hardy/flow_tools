@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import h5py
 import nrrd
 import numpy as np
@@ -79,26 +81,25 @@ class Patient4DFlow:
     # NOTE: I'm currently having a user input the paths directly, but this could definitely get tedious (especially since DICOM paths are evil and not even close to being straightforward/intuitive).
     # I will definitely want to automate this process but unfortunately, again, DICOMs are evil and I don't know how to parse their metadata completely yet...
 
-    def convert_vti(data_path, output_dir, output_filename):
+    def convert_to_vti(self, output_dir=None):
 
-        Nt = 0
-        dx = 0
-
-        for t in range(Nt):
-            # open additional mat files mat file in series (silly string concatenation here...)
-            with h5py.File(data_path + f"_{t+1}.mat", "r") as f:
-                # get pointers for velocity struct
-                v_pointers = f["v"][:]
-
-                # access the images (matlab equivalent: v{1}.im)
-                u = f[v_pointers[0, 0]]["im"][:].T
-                v = f[v_pointers[1, 0]]["im"][:].T
-                w = f[v_pointers[2, 0]]["im"][:].T
+        for t in range(self.flow_data.shape[-1]):
 
             # write velocity field one timestep at a time
-            vel = (u, v, w)
-            out_path = f"{output_dir}/{output_filename}_{t:03d}"
-            imageToVTK(out_path, spacing=dx, cellData={"Velocity": vel})
+            u = self.flow_data[0, :, :, :, t].copy() * self.segmentation
+            v = self.flow_data[1, :, :, :, t].copy() * self.segmentation
+            w = self.flow_data[2, :, :, :, t].copy() * self.segmentation
+            vel = (-w, v, u)
+
+            if output_dir is not None:
+                out_path = f"{self.dir}/{output_dir}/{self.ID}_flow_{t:03d}"
+            else:
+                out_path = f"{self.dir}/{self.ID}_flow_vti/{self.ID}_vel_{t:03d}"
+
+            # make sure output path exists, create directory if not
+            Path(out_path).mkdir(parents=True, exist_ok=True)
+
+            imageToVTK(out_path, spacing=[1, 1, 1], cellData={"Velocity": vel})
 
 
 def main():
@@ -110,6 +111,7 @@ def main():
 
     print(patient_UM19)
     patient_UM19.check_orientation()
+    patient_UM19.convert_to_vti()
 
 
 if __name__ == "__main__":
