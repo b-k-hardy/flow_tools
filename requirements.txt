@@ -1,0 +1,6 @@
+matplotlib
+pynrrd
+numpy
+pydicom
+h5py
+pyevtk
