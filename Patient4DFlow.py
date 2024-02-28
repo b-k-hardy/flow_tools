@@ -81,7 +81,15 @@ class Patient4DFlow:
     # NOTE: I'm currently having a user input the paths directly, but this could definitely get tedious (especially since DICOM paths are evil and not even close to being straightforward/intuitive).
     # I will definitely want to automate this process but unfortunately, again, DICOMs are evil and I don't know how to parse their metadata completely yet...
 
-    def convert_to_vti(self, output_dir=None):
+    def convert_to_vti(self, output_dir: None | str = None) -> None:
+
+        if output_dir is not None:
+            output_dir = f"{self.dir}/{output_dir}"
+        else:
+            output_dir = f"{self.dir}/{self.ID}_flow_vti"
+
+        # make sure output path exists, create directory if not
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
 
         for t in range(self.flow_data.shape[-1]):
 
@@ -91,15 +99,12 @@ class Patient4DFlow:
             w = self.flow_data[2, :, :, :, t].copy() * self.segmentation
             vel = (-w, v, u)
 
-            if output_dir is not None:
-                out_path = f"{self.dir}/{output_dir}/{self.ID}_flow_{t:03d}"
-            else:
-                out_path = f"{self.dir}/{self.ID}_flow_vti/{self.ID}_vel_{t:03d}"
-
-            # make sure output path exists, create directory if not
-            Path(out_path).mkdir(parents=True, exist_ok=True)
+            out_path = f"{output_dir}/{self.ID}_flow_{t:03d}"
 
             imageToVTK(out_path, spacing=[1, 1, 1], cellData={"Velocity": vel})
+
+    def export_to_mat():
+        return -1
 
 
 def main():
