@@ -16,7 +16,23 @@ def import_segmentation(seg_path):
     return segmentation
 
 
-def import_flow(paths, vencs, phase_range=4096, check=None):
+def import_flow(
+    paths: tuple[str, str, str],
+    vencs: tuple[int, int, int],
+    phase_range: int = 4096,
+    check: None | int = None,
+) -> np.ndarray:
+    """Function that imports 4D flow phase data
+
+    Args:
+        paths (tuple[str, str, str]): _description_
+        vencs (tuple[int, int, int]): _description_
+        phase_range (int, optional): _description_. Defaults to 4096.
+        check (None | int, optional): _description_. Defaults to None.
+
+    Returns:
+        np.ndarray: 5-dimensional array of flow data (vel component, x, y, z, t)
+    """
 
     img5d = []
 
@@ -99,7 +115,16 @@ def import_flow(paths, vencs, phase_range=4096, check=None):
     return np.asarray(img5d)
 
 
-def import_dicoms(dicom_path, check=None):
+def import_dicoms(dicom_path: str, check: None | int = None) -> np.ndarray:
+    """_summary_
+
+    Args:
+        dicom_path (str): _description_
+        check (None | int, optional): _description_. Defaults to None.
+
+    Returns:
+        np.array: _description_
+    """
     # load the DICOM files
     files = []
     print(f"glob: {dicom_path}")
@@ -165,7 +190,15 @@ def import_dicoms(dicom_path, check=None):
     return img4d
 
 
-def import_all_dicoms(dir_path):
+def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
+    """Function that automatically walks through DICOM directory tree and imports 4D flow files.
+
+    Args:
+       dir_path (str): path to data directory
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: magnitude data, flow data
+    """
 
     phase_encoding_IDs = ["ap", "rl", "fh", "in"]
 
@@ -177,7 +210,11 @@ def import_all_dicoms(dir_path):
 
         print(f"Checking {dir_name}")
         fname = os.listdir(dir_path + dir_name)[0]
-        check_file = pydicom.dcmread(dir_path + dir_name + fname)
+
+        try:
+            check_file = pydicom.dcmread(dir_path + dir_name + fname)
+        except pydicom.errors.InvalidDicomError:
+            continue
 
         if "4dflow" in check_file.SeriesDescription.lower() and hasattr(
             check_file, "SequenceName"
@@ -203,9 +240,7 @@ def import_all_dicoms(dir_path):
     mag_data = import_dicoms(dir_path + mag_path)
     flow_data = import_flow(flow_paths, vencs)
 
-    # 2. Check one file from each directory to check SequenceType
     # 3. Stop checking loop when all relevant directories are found (mag, u, v, w)
-    # 4. Read in data from these four directories
 
     return mag_data, flow_data
 
