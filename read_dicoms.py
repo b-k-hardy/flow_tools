@@ -112,10 +112,17 @@ def import_flow(
 
         img5d.append(img4d)
 
-    return np.asarray(img5d)
+    trigger_times = np.array([float(s.TriggerTime) for s in slices])
+    trigger_times = np.unique(trigger_times)
+    dt = np.mean(np.diff(trigger_times)) * 1e-3  # make sure dt is in seconds
+
+    dx = list(img_step.PixelSpacing) + [img_step.SliceThickness]
+    dx = np.array([float(dx_i) for dx_i in dx])
+
+    return np.asarray(img5d), dx, dt
 
 
-def import_dicoms(dicom_path: str, check: None | int = None) -> np.ndarray:
+def import_mag(dicom_path: str, check: None | int = None) -> np.ndarray:
     """_summary_
 
     Args:
@@ -241,12 +248,12 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
     flow_paths = (dir_path + u_path, dir_path + v_path, dir_path + w_path)
     vencs = (u_venc, v_venc, w_venc)
 
-    mag_data = import_dicoms(dir_path + mag_path)
-    flow_data = import_flow(flow_paths, vencs)
+    mag_data = import_mag(dir_path + mag_path)
+    flow_data, dx, dt = import_flow(flow_paths, vencs)
 
     # 3. Stop checking loop when all relevant directories are found (mag, u, v, w)
 
-    return mag_data, flow_data
+    return mag_data, flow_data, dx, dt
 
 
 def main():

@@ -14,12 +14,10 @@ class Patient4DFlow:
     def __init__(self, ID, data_directory):
         self.ID = ID
         self.dir = data_directory
-        self.mag_data, self.flow_data = rd.import_all_dicoms(self.dir)
+        self.mag_data, self.flow_data, self.dx, self.dt = rd.import_all_dicoms(self.dir)
         self.segmentation = self.add_segmentation("Segmentation.nrrd")
 
         # NOTE: TEMPORARY VALUES BEFORE I FIX EVERYTHING
-        self.dt = 0.050
-        self.dx = np.array([0.002, 0.002, 0.002])
         self.res = np.array(self.mag_data.shape)
 
         # self.mag_data = self.add_mag(path_input="user")
@@ -35,7 +33,7 @@ class Patient4DFlow:
         else:
             mag_path = path_input
 
-        mag_data = rd.import_dicoms(self.dir + mag_path)
+        mag_data = rd.import_mag(self.dir + mag_path)
 
         return mag_data
 
@@ -48,11 +46,11 @@ class Patient4DFlow:
         else:
             u_path, v_path, w_path = path_input
 
-        flow_data = rd.import_flow(
+        flow_data, dx, dt = rd.import_flow(
             (self.dir + u_path, self.dir + v_path, self.dir + w_path)
         )
 
-        return flow_data
+        return flow_data, dx, dt
 
     def add_segmentation(self, path_input):
 
@@ -108,7 +106,7 @@ class Patient4DFlow:
 
             out_path = f"{output_dir}/{self.ID}_flow_{t:03d}"
 
-            imageToVTK(out_path, spacing=[1, 1, 1], cellData={"Velocity": vel})
+            imageToVTK(out_path, spacing=self.dx.tolist(), cellData={"Velocity": vel})
 
     def export_to_mat_struct(self, output_dir: None | str = None) -> None:
         eng = matlab.engine.start_matlab()
