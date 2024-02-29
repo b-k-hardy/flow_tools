@@ -209,7 +209,11 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
     for dir_name in dir_list:
 
         print(f"Checking {dir_name}")
-        fname = os.listdir(dir_path + dir_name)[0]
+
+        try:
+            fname = os.listdir(dir_path + dir_name)[0]
+        except IndexError:
+            continue
 
         try:
             check_file = pydicom.dcmread(dir_path + dir_name + fname)
