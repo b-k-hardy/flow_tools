@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import h5py
+import matlab.engine
 import nrrd
 import numpy as np
 import pyvista as pv
@@ -14,10 +15,16 @@ class Patient4DFlow:
         self.ID = ID
         self.dir = data_directory
         self.mag_data, self.flow_data = rd.import_all_dicoms(self.dir)
+        self.segmentation = self.add_segmentation("Segmentation.nrrd")
+
+        # NOTE: TEMPORARY VALUES BEFORE I FIX EVERYTHING
+        self.dt = 0.050
+        self.dx = np.array([0.002, 0.002, 0.002])
+        self.res = np.array(self.mag_data.shape)
 
         # self.mag_data = self.add_mag(path_input="user")
         # self.flow_data = self.add_flow(path_input="user")
-        self.segmentation = self.add_segmentation(path_input="user")
+        # self.segmentation = self.add_segmentation(path_input="user")
 
     def __str__(self):
         return f"Patient ID: {self.ID} @ location {self.dir}"
@@ -103,8 +110,32 @@ class Patient4DFlow:
 
             imageToVTK(out_path, spacing=[1, 1, 1], cellData={"Velocity": vel})
 
-    def export_to_mat():
-        return -1
+    def export_to_mat_struct(self, output_dir: None | str = None) -> None:
+        eng = matlab.engine.start_matlab()
+
+        if output_dir is not None:
+            output_dir = f"{self.dir}/{output_dir}"
+        else:
+            output_dir = f"{self.dir}/{self.ID}_mat_files"
+
+        # make sure output path exists, create directory if not
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+        # navigate MATLAB instance to current working directory to call custom function
+        eng.cd(str(Path.cwd()))
+        eng.export_struct(
+            output_dir + f"/{self.ID}_vel.mat",
+            self.flow_data,
+            self.dx,
+            self.dt,
+            self.res,
+            nargout=0,
+        )
+
+        eng.quit()
+
+        # now call matlab to more easily assemble vWERP/STE/PPE compatible structs
+        # function should not return anything...
 
 
 def main():
@@ -114,9 +145,9 @@ def main():
         "/Users/bkhardy/Dropbox (University of Michigan)/MRI_1.22.24/DICOM/0000A628/AAD75E3C/AA62C567/",
     )
 
-    print(patient_UM19)
     patient_UM19.check_orientation()
     patient_UM19.convert_to_vti()
+    patient_UM19.export_to_mat_struct()
 
 
 if __name__ == "__main__":
