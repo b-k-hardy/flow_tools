@@ -8,12 +8,10 @@ import numpy as np
 import pydicom
 
 
-def import_segmentation(seg_path):
-    segmentation, header = nrrd.read(seg_path)
-    print(segmentation.shape)
-    print(header)
-
-    return segmentation
+# NOTE: Currently have all labels saved to a single segmentation, but this does not work... overlapping
+# inlet/outlet with mask just makes holes in mask
+def import_segmentation(seg_path: str) -> np.ndarray:
+    return nrrd.read(seg_path)[0]
 
 
 def import_flow(
@@ -21,7 +19,7 @@ def import_flow(
     vencs: tuple[int, int, int],
     phase_range: int = 4096,
     check: None | int = None,
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray, np.floating]:
     """Function that imports 4D flow phase data
 
     Args:
@@ -109,7 +107,6 @@ def import_flow(
             plt.show()
 
         # fill 4D array with the images from the files
-
         img5d.append(img4d)
 
     trigger_times = np.array([float(s.TriggerTime) for s in slices])
@@ -117,7 +114,7 @@ def import_flow(
     dt = np.mean(np.diff(trigger_times)) * 1e-3  # make sure dt is in seconds
 
     dx = list(img_step.PixelSpacing) + [img_step.SliceThickness]
-    dx = np.array([float(dx_i) for dx_i in dx])
+    dx = np.array([float(dx_i) for dx_i in dx]) * 1e-3  # make sure dx is in seconds
 
     return np.asarray(img5d), dx, dt
 
