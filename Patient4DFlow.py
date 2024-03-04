@@ -1,8 +1,6 @@
 from pathlib import Path
 
-import h5py
 import matlab.engine
-import nrrd
 import numpy as np
 import pyvista as pv
 from pyevtk.hl import imageToVTK
@@ -11,11 +9,20 @@ import read_dicoms as rd
 
 
 class Patient4DFlow:
-    def __init__(self, ID, data_directory):
+    def __init__(self, ID: str, data_directory: str, seg_path: str = "user") -> None:
         self.ID = ID
         self.dir = data_directory
         self.mag_data, self.flow_data, self.dx, self.dt = rd.import_all_dicoms(self.dir)
-        self.segmentation = self.add_segmentation("Segmentation.nrrd")
+        self.segmentation = self.add_segmentation(seg_path)
+        self.mask = (
+            np.array(self.segmentation != 0).astype(np.float64).copy()
+        )  # ALL NON-ZERO VALUES
+        self.inlet = (
+            np.array(self.segmentation == 2).astype(np.float64).copy()
+        )  # ALL TWO'S
+        self.outlet = (
+            np.array(self.segmentation == 3).astype(np.float64).copy()
+        )  # ALL THREE'S
 
         # NOTE: TEMPORARY VALUES BEFORE I FIX EVERYTHING
         self.res = np.array(self.mag_data.shape)
@@ -37,7 +44,9 @@ class Patient4DFlow:
 
         return mag_data
 
-    def add_flow(self, path_input):
+    def add_flow(
+        self, path_input: str = "user"
+    ) -> tuple[np.ndarray, np.ndarray, np.floating]:
 
         if path_input == "user":
             u_path = input("Enter relative path to u data: ")
@@ -64,7 +73,6 @@ class Patient4DFlow:
         # PROBABLY GOING TO BE TEMPORARY CODE AS I WORK THINGS OUT
         segmentation = np.transpose(segmentation, (1, 0, 2))
         segmentation = np.flip(segmentation, axis=2)
-        nrrd.write("Segmentation_transposed.nrrd", segmentation)
 
         return segmentation
 
@@ -72,13 +80,13 @@ class Patient4DFlow:
 
         mag = self.mag_data[:, :, :, 6].copy()
 
-        u = self.flow_data[0, :, :, :, 6].copy() * self.segmentation
-        v = self.flow_data[1, :, :, :, 6].copy() * self.segmentation
-        w = self.flow_data[2, :, :, :, 6].copy() * self.segmentation
+        u = self.flow_data[0, :, :, :, 6].copy() * self.mask
+        v = self.flow_data[1, :, :, :, 6].copy() * self.mask
+        w = self.flow_data[2, :, :, :, 6].copy() * self.mask
         vel = (-w, v, u)
 
-        imageToVTK("UM19_check_mag", cellData={"Magnitude": mag})
-        imageToVTK("UM19_check_vel", cellData={"Velocity": vel})
+        imageToVTK(f"{self.ID}_check_mag", cellData={"Magnitude": mag})
+        imageToVTK(f"{self.ID}_check_vel", cellData={"Velocity": vel})
 
         # unfortunately it seems like the only solution here is to write a timeframe to disk then load
         # back in. That sucks and is inefficient but whatever.
@@ -99,16 +107,16 @@ class Patient4DFlow:
         for t in range(self.flow_data.shape[-1]):
 
             # write velocity field one timestep at a time
-            u = self.flow_data[0, :, :, :, t].copy() * self.segmentation
-            v = self.flow_data[1, :, :, :, t].copy() * self.segmentation
-            w = self.flow_data[2, :, :, :, t].copy() * self.segmentation
+            u = self.flow_data[0, :, :, :, t].copy() * self.mask
+            v = self.flow_data[1, :, :, :, t].copy() * self.mask
+            w = self.flow_data[2, :, :, :, t].copy() * self.mask
             vel = (-w, v, u)
 
             out_path = f"{output_dir}/{self.ID}_flow_{t:03d}"
 
             imageToVTK(out_path, spacing=self.dx.tolist(), cellData={"Velocity": vel})
 
-    def export_to_mat_struct(self, output_dir: None | str = None) -> None:
+    def export_to_mat(self, output_dir: None | str = None) -> None:
         eng = matlab.engine.start_matlab()
 
         if output_dir is not None:
@@ -130,10 +138,41 @@ class Patient4DFlow:
             nargout=0,
         )
 
+        eng.export_masks(
+            output_dir + f"/{self.ID}_masks.mat",
+            self.mask,
+            self.inlet,
+            self.outlet,
+            nargout=0,
+        )
+
         eng.quit()
 
         # now call matlab to more easily assemble vWERP/STE/PPE compatible structs
         # function should not return anything...
+
+    # NOTE: NEED TO COMBINE WITH OTHER MAT FUNCTION TO REDUCE CRASHING
+    def export_seg_to_mat(self, output_dir: None | str = None) -> None:
+        eng = matlab.engine.start_matlab()
+
+        if output_dir is not None:
+            output_dir = f"{self.dir}/{output_dir}"
+        else:
+            output_dir = f"{self.dir}/{self.ID}_mat_files"
+
+        # make sure output path exists, create directory if not
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+        eng.cd(str(Path.cwd()))
+        eng.export_masks(
+            output_dir + f"/{self.ID}_masks.mat",
+            self.mask,
+            self.inlet,
+            self.outlet,
+            nargout=0,
+        )
+
+        eng.quit()
 
 
 def main():
@@ -141,11 +180,19 @@ def main():
     patient_UM19 = Patient4DFlow(
         "UM19",
         "/Users/bkhardy/Dropbox (University of Michigan)/MRI_1.22.24/DICOM/0000A628/AAD75E3C/AA62C567/",
+        "UM19_mat_files/Segmentation.nrrd",
     )
 
     patient_UM19.check_orientation()
     patient_UM19.convert_to_vti()
-    patient_UM19.export_to_mat_struct()
+    # patient_UM19.export_to_mat_struct()
+    patient_UM19.export_seg_to_mat()
+
+    # NOTE: THIS DOESN'T WORK WHEN THERE ARE MULTIPLE 4D FLOW STUDIES!!!!
+    # test_carlos = Patient4DFlow(
+    #    "Carlos",
+    #    "/Volumes/Shared3/Radiology-Burris-Lab/MR Data/4D Flow Test Data/Carlos 8.4.23/DICOM/000064DA/AA1E70D7/AA91C24E/",
+    # )
 
 
 if __name__ == "__main__":
