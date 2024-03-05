@@ -3,3 +3,4 @@
 *.nrrd
 *.dcm
 *.pyc
+*.json
