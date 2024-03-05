@@ -151,42 +151,18 @@ class Patient4DFlow:
         # now call matlab to more easily assemble vWERP/STE/PPE compatible structs
         # function should not return anything...
 
-    # NOTE: NEED TO COMBINE WITH OTHER MAT FUNCTION TO REDUCE CRASHING
-    def export_seg_to_mat(self, output_dir: None | str = None) -> None:
-        eng = matlab.engine.start_matlab()
-
-        if output_dir is not None:
-            output_dir = f"{self.dir}/{output_dir}"
-        else:
-            output_dir = f"{self.dir}/{self.ID}_mat_files"
-
-        # make sure output path exists, create directory if not
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
-
-        eng.cd(str(Path.cwd()))
-        eng.export_masks(
-            output_dir + f"/{self.ID}_masks.mat",
-            self.mask,
-            self.inlet,
-            self.outlet,
-            nargout=0,
-        )
-
-        eng.quit()
-
 
 def main():
 
     patient_UM19 = Patient4DFlow(
         "UM19",
         "/Users/bkhardy/Dropbox (University of Michigan)/MRI_1.22.24/DICOM/0000A628/AAD75E3C/AA62C567/",
-        "UM19_mat_files/Segmentation.nrrd",
+        "Segmentation.nrrd",
     )
 
     patient_UM19.check_orientation()
     patient_UM19.convert_to_vti()
-    # patient_UM19.export_to_mat_struct()
-    patient_UM19.export_seg_to_mat()
+    patient_UM19.export_to_mat()
 
     # NOTE: THIS DOESN'T WORK WHEN THERE ARE MULTIPLE 4D FLOW STUDIES!!!!
     # test_carlos = Patient4DFlow(

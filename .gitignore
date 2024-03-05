@@ -4,3 +4,4 @@
 *.dcm
 *.pyc
 *.json
+*.code-workspace
