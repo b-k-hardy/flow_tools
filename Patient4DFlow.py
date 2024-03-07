@@ -4,6 +4,7 @@ import matlab.engine
 import numpy as np
 import pyvista as pv
 from pyevtk.hl import imageToVTK
+from scipy import ndimage
 
 import read_dicoms as rd
 
@@ -17,12 +18,16 @@ class Patient4DFlow:
         self.mask = (
             np.array(self.segmentation != 0).astype(np.float64).copy()
         )  # ALL NON-ZERO VALUES
+
         self.inlet = (
             np.array(self.segmentation == 2).astype(np.float64).copy()
         )  # ALL TWO'S
+        self.inlet = ndimage.binary_dilation(self.inlet) * self.mask
+
         self.outlet = (
             np.array(self.segmentation == 3).astype(np.float64).copy()
         )  # ALL THREE'S
+        self.outlet = ndimage.binary_dilation(self.outlet) * self.mask
 
         # NOTE: TEMPORARY VALUES BEFORE I FIX EVERYTHING
         self.res = np.array(self.mag_data.shape)

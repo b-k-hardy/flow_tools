@@ -7,8 +7,10 @@ function export_masks(save_path, mask, inlet, outlet)
 % NOTE: I HAVE HARDCODED IN OUR vWERP DIRECTORY... USER WILL NEED TO CHANGE THIS
 addpath(genpath("../../vwerp"))
 
-outlet = DilateMask(outlet) .* mask;
-inlet = DilateMask(inlet) .* mask;
+disp("Exporting Masks")
+
+%outlet = DilateMask(outlet) .* mask;
+%inlet = DilateMask(inlet) .* mask;
 
 save(save_path, "mask", "inlet", "outlet", "-v7.3")
 
