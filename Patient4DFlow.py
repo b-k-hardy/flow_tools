@@ -174,7 +174,11 @@ def main():
     test_brandon = Patient4DFlow(
         "Brandon",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Brandon 8.17.23/",
+        "Segmentation.nrrd",
     )
+
+    test_brandon.convert_to_vti()
+    test_brandon.export_to_mat()
 
     # NOTE: THIS DOESN'T WORK WHEN THERE ARE MULTIPLE 4D FLOW STUDIES!!!!
     # test_carlos = Patient4DFlow(

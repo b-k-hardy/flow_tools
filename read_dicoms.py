@@ -205,6 +205,7 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
     """
 
     phase_encoding_IDs = ["ap", "rl", "fh", "in"]
+    wip_list = []
 
     # 1. Find all DICOM directories
     dir_list = glob.glob(
@@ -224,23 +225,32 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
         except IsADirectoryError:
             continue
 
+        # there can be multiple studies; therefore we should check for SeriesNumber as well
         if "4dflow" in check_file.SeriesDescription.lower() and hasattr(
             check_file, "SequenceName"
         ):
             wip = check_file.SequenceName
+            series = check_file.SeriesNumber
+            wip_list.append({"wip": wip, "series_num": int(series), "dir": dir_name})
             print(f"Found {wip}!")  # in, ap, fh
 
-            if wip[-2:] == "in":
-                u_path = dir_name + "*"
-                u_venc = int(wip[-5:-2])
-            elif wip[-2:] == "ap":
-                v_path = dir_name + "*"
-                v_venc = int(wip[-5:-2])
-            elif wip[-2:] == "fh":
-                w_path = dir_name + "*"
-                w_venc = int(wip[-5:-2])
-            else:
-                mag_path = dir_name + "*"
+    wip_list.sort(key=lambda w: w["series_num"])
+    wip_list = wip_list[-4:]
+    for item in wip_list:
+        dir_name = item["dir"]
+        wip = item["wip"]
+
+        if wip[-2:] == "in":
+            u_path = dir_name + "*"
+            u_venc = int(wip[-5:-2])
+        elif wip[-2:] == "ap":
+            v_path = dir_name + "*"
+            v_venc = int(wip[-5:-2])
+        elif wip[-2:] == "fh":
+            w_path = dir_name + "*"
+            w_venc = int(wip[-5:-2])
+        else:
+            mag_path = dir_name + "*"
 
     flow_paths = (dir_path + u_path, dir_path + v_path, dir_path + w_path)
     vencs = (u_venc, v_venc, w_venc)
