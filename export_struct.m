@@ -4,6 +4,8 @@ function export_struct(save_path, vel_data, dx, dt, res)
 %   Output: None
 %   Input:  Velocity data, voxel size, temporal resolution, spatial resolution (grid size)
 
+disp("Exporting velocity structs...")
+
 v = cell(1,3);
 
 for i=1:3

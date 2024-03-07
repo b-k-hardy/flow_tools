@@ -4,13 +4,7 @@ function export_masks(save_path, mask, inlet, outlet)
 %   Output: None
 %   Input:  mask, inlet, and outlet from 3D Slicer
 
-% NOTE: I HAVE HARDCODED IN OUR vWERP DIRECTORY... USER WILL NEED TO CHANGE THIS
-addpath(genpath("../../vwerp"))
-
-disp("Exporting Masks")
-
-%outlet = DilateMask(outlet) .* mask;
-%inlet = DilateMask(inlet) .* mask;
+disp("Exporting masks...")
 
 save(save_path, "mask", "inlet", "outlet", "-v7.3")
 
