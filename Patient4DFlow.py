@@ -157,8 +157,7 @@ class Patient4DFlow:
         # function should not return anything...
 
 
-def main():
-
+def um19_check():
     patient_UM19 = Patient4DFlow(
         "UM19",
         "/Users/bkhardy/Dropbox (University of Michigan)/MRI_1.22.24/DICOM/0000A628/AAD75E3C/AA62C567/",
@@ -168,6 +167,14 @@ def main():
     patient_UM19.check_orientation()
     patient_UM19.convert_to_vti()
     patient_UM19.export_to_mat()
+
+
+def main():
+
+    test_brandon = Patient4DFlow(
+        "Brandon",
+        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Brandon 8.17.23/",
+    )
 
     # NOTE: THIS DOESN'T WORK WHEN THERE ARE MULTIPLE 4D FLOW STUDIES!!!!
     # test_carlos = Patient4DFlow(

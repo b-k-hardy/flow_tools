@@ -208,7 +208,7 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
 
     # 1. Find all DICOM directories
     dir_list = glob.glob(
-        "*/", root_dir=dir_path
+        "**/", root_dir=dir_path, recursive=True
     )  # there might be a cleaner way to do this recursively, but for now this is okay -- or maybe I good use os module instead?
     for dir_name in dir_list:
 
@@ -216,12 +216,12 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
 
         try:
             fname = os.listdir(dir_path + dir_name)[0]
+            check_file = pydicom.dcmread(dir_path + dir_name + fname)
         except IndexError:
             continue
-
-        try:
-            check_file = pydicom.dcmread(dir_path + dir_name + fname)
         except pydicom.errors.InvalidDicomError:
+            continue
+        except IsADirectoryError:
             continue
 
         if "4dflow" in check_file.SeriesDescription.lower() and hasattr(
