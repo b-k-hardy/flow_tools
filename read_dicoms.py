@@ -14,6 +14,7 @@ def import_segmentation(seg_path: str) -> np.ndarray:
     return nrrd.read(seg_path)[0]
 
 
+# FIXME: pass in base directory so glob paths aren't so annoying...
 def import_flow(
     paths: tuple[str, str, str],
     vencs: tuple[int, int, int],
@@ -39,7 +40,8 @@ def import_flow(
         files = []
         print(f"glob: {paths[i]}")
         for fname in glob.glob(paths[i], recursive=False):
-            print(f"loading: {fname}", end="\r")
+            print_out = "/".join(fname.split("/")[-2:])
+            print(f"loading: {print_out}", end="\r")
             files.append(pydicom.dcmread(fname))
 
         print(f"\nfile count: {len(files)}")
@@ -133,7 +135,8 @@ def import_mag(dicom_path: str, check: None | int = None) -> np.ndarray:
     files = []
     print(f"glob: {dicom_path}")
     for fname in glob.glob(dicom_path, recursive=False):
-        print(f"loading: {fname}", end="\r")
+        print_out = "/".join(fname.split("/")[-2:])
+        print(f"loading: {print_out}", end="\r")
         files.append(pydicom.dcmread(fname))
 
     print(f"\nfile count: {len(files)}")
