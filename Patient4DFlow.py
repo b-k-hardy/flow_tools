@@ -8,6 +8,8 @@ from scipy import ndimage
 
 import read_dicoms as rd
 
+PA_TO_MMHG = 0.00750061683
+
 
 class Patient4DFlow:
     def __init__(self, ID: str, data_directory: str, seg_path: str = "user") -> None:
@@ -156,6 +158,23 @@ class Patient4DFlow:
         # now call matlab to more easily assemble vWERP/STE/PPE compatible structs
         # function should not return anything...
 
+    def get_ste_drop(self):
+        eng = matlab.engine.start_matlab()
+
+        eng.addpath(eng.genpath("vwerp"))
+
+        times, dP, P = eng.get_ste_pressure_estimate_py(
+            f"{self.dir}/{self.ID}_mat_files/{self.ID}_vel.mat",
+            f"{self.dir}/{self.ID}_mat_files/{self.ID}_masks.mat",
+            nargout=3,
+        )
+
+        eng.quit()
+
+        self.dp_STE = np.array(dP) * PA_TO_MMHG
+        self.p_STE = np.array(P) * PA_TO_MMHG
+        print(self.dp_STE)
+
 
 def um19_check():
     patient_UM19 = Patient4DFlow(
@@ -179,6 +198,7 @@ def main():
 
     test_brandon.convert_to_vti()
     test_brandon.export_to_mat()
+    test_brandon.get_ste_drop()
 
     # NOTE: THIS DOESN'T WORK WHEN THERE ARE MULTIPLE 4D FLOW STUDIES!!!!
     # test_carlos = Patient4DFlow(
