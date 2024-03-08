@@ -8,3 +8,4 @@ pyevtk==1.6.0
 pynrrd==1.0.0
 pyvista==0.43.3
 scipy==1.11.1
+tqdm==4.65.0
