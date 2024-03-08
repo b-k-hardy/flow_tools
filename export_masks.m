@@ -4,8 +4,6 @@ function export_masks(save_path, mask, inlet, outlet)
 %   Output: None
 %   Input:  mask, inlet, and outlet from 3D Slicer
 
-disp("Exporting masks...")
-
 save(save_path, "mask", "inlet", "outlet", "-v7.3")
 
 end

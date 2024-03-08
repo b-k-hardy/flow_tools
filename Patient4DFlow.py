@@ -1,11 +1,14 @@
 from pathlib import Path
 
 import matlab.engine
+import matplotlib.pyplot as plt
 import numpy as np
 import pyvista as pv
 from pyevtk.hl import imageToVTK
 from scipy import ndimage
+from tqdm import tqdm
 
+import plot_results as pr
 import read_dicoms as rd
 
 PA_TO_MMHG = 0.00750061683
@@ -16,6 +19,11 @@ class Patient4DFlow:
         self.ID = ID
         self.dir = data_directory
         self.mag_data, self.flow_data, self.dx, self.dt = rd.import_all_dicoms(self.dir)
+
+        self.flow_data = np.flip(self.flow_data, axis=0)
+        self.flow_data[0] *= -1
+        self.flow_data = self.flow_data.copy()
+
         self.segmentation = self.add_segmentation(seg_path)
         self.mask = (
             np.array(self.segmentation != 0).astype(np.float64).copy()
@@ -90,7 +98,8 @@ class Patient4DFlow:
         u = self.flow_data[0, :, :, :, 6].copy() * self.mask
         v = self.flow_data[1, :, :, :, 6].copy() * self.mask
         w = self.flow_data[2, :, :, :, 6].copy() * self.mask
-        vel = (-w, v, u)
+        # vel = (-w, v, u)
+        vel = (u, v, w)
 
         imageToVTK(f"{self.ID}_check_mag", cellData={"Magnitude": mag})
         imageToVTK(f"{self.ID}_check_vel", cellData={"Velocity": vel})
@@ -111,13 +120,15 @@ class Patient4DFlow:
         # make sure output path exists, create directory if not
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-        for t in range(self.flow_data.shape[-1]):
+        print("\nExporting to VTI...")
+        for t in tqdm(range(self.flow_data.shape[-1])):
 
             # write velocity field one timestep at a time
             u = self.flow_data[0, :, :, :, t].copy() * self.mask
             v = self.flow_data[1, :, :, :, t].copy() * self.mask
             w = self.flow_data[2, :, :, :, t].copy() * self.mask
-            vel = (-w, v, u)
+            # vel = (-w, v, u)
+            vel = (u, v, w)
 
             out_path = f"{output_dir}/{self.ID}_flow_{t:03d}"
 
@@ -135,7 +146,7 @@ class Patient4DFlow:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
         # navigate MATLAB instance to current working directory to call custom function
-        eng.cd(str(Path.cwd()))
+        print("Exporting velocity structs...")
         eng.export_struct(
             output_dir + f"/{self.ID}_vel.mat",
             self.flow_data,
@@ -145,6 +156,7 @@ class Patient4DFlow:
             nargout=0,
         )
 
+        print("Exporting masks...")
         eng.export_masks(
             output_dir + f"/{self.ID}_masks.mat",
             self.mask,
@@ -171,9 +183,14 @@ class Patient4DFlow:
 
         eng.quit()
 
-        self.dp_STE = np.array(dP) * PA_TO_MMHG
+        self.times = np.array(times).flatten()
+        self.dp_STE = np.array(dP).flatten() * PA_TO_MMHG
         self.p_STE = np.array(P) * PA_TO_MMHG
         print(self.dp_STE)
+
+    def plot_dp(self):
+        figure = pr.plot_dp(self.times, self.dp_STE, self.ID)
+        # plt.show()
 
 
 def um19_check():
@@ -188,8 +205,7 @@ def um19_check():
     patient_UM19.export_to_mat()
 
 
-def main():
-
+def brandon_full():
     test_brandon = Patient4DFlow(
         "Brandon",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Brandon 8.17.23/",
@@ -199,12 +215,24 @@ def main():
     test_brandon.convert_to_vti()
     test_brandon.export_to_mat()
     test_brandon.get_ste_drop()
+    test_brandon.plot_dp()
 
-    # NOTE: THIS DOESN'T WORK WHEN THERE ARE MULTIPLE 4D FLOW STUDIES!!!!
-    # test_carlos = Patient4DFlow(
-    #    "Carlos",
-    #    "/Volumes/Shared3/Radiology-Burris-Lab/MR Data/4D Flow Test Data/Carlos 8.4.23/DICOM/000064DA/AA1E70D7/AA91C24E/",
-    # )
+
+def carlos_full():
+    test_carlos = Patient4DFlow(
+        "Carlos",
+        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Carlos 8.4.23/",
+        "Segmentation.nrrd",
+    )
+
+    test_carlos.convert_to_vti()
+    test_carlos.export_to_mat()
+    test_carlos.get_ste_drop()
+    test_carlos.plot_dp()
+
+
+def main():
+    brandon_full()
 
 
 if __name__ == "__main__":
