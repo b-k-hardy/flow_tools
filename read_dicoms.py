@@ -6,11 +6,18 @@ import matplotlib.pyplot as plt
 import nrrd
 import numpy as np
 import pydicom
+from tqdm import tqdm
 
 
-# NOTE: Currently have all labels saved to a single segmentation, but this does not work... overlapping
-# inlet/outlet with mask just makes holes in mask
 def import_segmentation(seg_path: str) -> np.ndarray:
+    """_summary_
+
+    Args:
+        seg_path (str): _description_
+
+    Returns:
+        np.ndarray: _description_
+    """
     return nrrd.read(seg_path)[0]
 
 
@@ -39,9 +46,10 @@ def import_flow(
         # load the DICOM files
         files = []
         print(f"glob: {paths[i]}")
-        for fname in glob.glob(paths[i], recursive=False):
+
+        for fname in tqdm(glob.glob(paths[i], recursive=False)):
             print_out = "/".join(fname.split("/")[-2:])
-            print(f"loading: {print_out}", end="\r")
+            # print(f"loading: {print_out}", end="\r")
             files.append(pydicom.dcmread(fname))
 
         print(f"\nfile count: {len(files)}")
@@ -134,9 +142,9 @@ def import_mag(dicom_path: str, check: None | int = None) -> np.ndarray:
     # load the DICOM files
     files = []
     print(f"glob: {dicom_path}")
-    for fname in glob.glob(dicom_path, recursive=False):
+    for fname in tqdm(glob.glob(dicom_path, recursive=False)):
         print_out = "/".join(fname.split("/")[-2:])
-        print(f"loading: {print_out}", end="\r")
+        # print(f"loading: {print_out}", end="\r")
         files.append(pydicom.dcmread(fname))
 
     print(f"\nfile count: {len(files)}")
@@ -261,27 +269,11 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
     mag_data = import_mag(dir_path + mag_path)
     flow_data, dx, dt = import_flow(flow_paths, vencs)
 
-    # 3. Stop checking loop when all relevant directories are found (mag, u, v, w)
-
     return mag_data, flow_data, dx, dt
 
 
 def main():
-
-    # NEW GOAL: GO AHEAD AND TRY TO DEBUG A DICOM SEARCH TOOL
-
-    # NOTE: I'm currently having a user input the paths directly, but this could definitely get tedious (especially since DICOM paths are evil and not even close to being straightforward/intuitive).
-    # I will definitely want to automate this process but unfortunately, again, DICOMs are evil and I don't know how to parse their metadata completely yet...
-    print("this is now a methods module")
-
-    # mag data in   00003965/*x
-    # u data in     0000ED0F/*
-    # v data in     0000D7F0/*
-    # w data in     00004E45/*
-
-    import_all_dicoms(
-        "/Users/bkhardy/Dropbox (University of Michigan)/MRI_1.22.24/DICOM/0000A628/AAD75E3C/AA62C567/"
-    )
+    print("This isn't a script, but feel free to debug/run tests here!")
 
 
 if __name__ == "__main__":

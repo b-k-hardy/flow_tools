@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 import plot_results as pr
 import read_dicoms as rd
+import seg_module as seg
 
 PA_TO_MMHG = 0.00750061683
 
@@ -171,6 +172,7 @@ class Patient4DFlow:
         # function should not return anything...
 
     def get_ste_drop(self):
+        """_summary_"""
         eng = matlab.engine.start_matlab()
 
         eng.addpath(eng.genpath("vwerp"))
@@ -186,11 +188,10 @@ class Patient4DFlow:
         self.times = np.array(times).flatten()
         self.dp_STE = np.array(dP).flatten() * PA_TO_MMHG
         self.p_STE = np.array(P) * PA_TO_MMHG
-        print(self.dp_STE)
 
     def plot_dp(self):
         figure = pr.plot_dp(self.times, self.dp_STE, self.ID)
-        # plt.show()
+        plt.show()
 
 
 def um19_check():
