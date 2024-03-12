@@ -1,3 +1,6 @@
 [submodule "vwerp"]
 	path = vwerp
 	url = git@gitlab.eecs.umich.edu:david.marlevi/vwerp.git
+[submodule "wiki"]
+	path = wiki
+	url = git@github.com:b-k-hardy/flow_tools.wiki.git
