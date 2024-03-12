@@ -99,7 +99,6 @@ class Patient4DFlow:
         u = self.flow_data[0, :, :, :, 6].copy() * self.mask
         v = self.flow_data[1, :, :, :, 6].copy() * self.mask
         w = self.flow_data[2, :, :, :, 6].copy() * self.mask
-        # vel = (-w, v, u)
         vel = (u, v, w)
 
         imageToVTK(f"{self.ID}_check_mag", cellData={"Magnitude": mag})
@@ -128,7 +127,6 @@ class Patient4DFlow:
             u = self.flow_data[0, :, :, :, t].copy() * self.mask
             v = self.flow_data[1, :, :, :, t].copy() * self.mask
             w = self.flow_data[2, :, :, :, t].copy() * self.mask
-            # vel = (-w, v, u)
             vel = (u, v, w)
 
             out_path = f"{output_dir}/{self.ID}_flow_{t:03d}"
@@ -171,12 +169,15 @@ class Patient4DFlow:
         # now call matlab to more easily assemble vWERP/STE/PPE compatible structs
         # function should not return anything...
 
-    # FIXME: Add interactivity! Add plane drawing!!!
-    def select_planes(self):
-        skel_image, skel_rough, self.skeleton = sm.smooth_skeletonize(
-            self.segmentation
+    # FIXME: Add interactivity! Add plane drawing!!! MAYBE SPLIT THIS UP
+    def add_skeleton(self):
+        skel_image, skel_rough, self.skeleton, self.skeleton_derivative = (
+            sm.smooth_skeletonize(self.segmentation)
         )  # FEEDING IN SEGMENTATION INSTEAD... WEIRD? NOTE: feeding in the full segmentation (with data range from 1 to 3) works better when visualizing... weird.
         pr.plot_seg_skeleton(self.segmentation, skel_image, skel_rough, self.skeleton)
+
+    def draw_planes(self):
+        sm.plane_drawer(self.segmentation, self.skeleton, self.skeleton_derivative)
 
     def get_ste_drop(self):
         """_summary_"""
@@ -216,7 +217,7 @@ def um19_check():
 def full_run(patient_id, data_path, seg_path):
     patient = Patient4DFlow(patient_id, data_path, seg_path)
 
-    patient.select_planes()
+    patient.add_skeleton()
     patient.convert_to_vti()
     patient.export_to_mat()
     patient.get_ste_drop()
@@ -224,11 +225,14 @@ def full_run(patient_id, data_path, seg_path):
 
 
 def main():
-    full_run(
+    prab = Patient4DFlow(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
         "Segmentation.nrrd",
     )
+
+    prab.add_skeleton()
+    prab.draw_planes()
 
 
 if __name__ == "__main__":
