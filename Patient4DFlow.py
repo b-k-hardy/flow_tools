@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 import plot_results as pr
 import read_dicoms as rd
-import seg_module as seg
+import seg_module as sm
 
 PA_TO_MMHG = 0.00750061683
 
@@ -171,6 +171,13 @@ class Patient4DFlow:
         # now call matlab to more easily assemble vWERP/STE/PPE compatible structs
         # function should not return anything...
 
+    # FIXME: Add interactivity! Add plane drawing!!!
+    def select_planes(self):
+        skel_image, skel_rough, self.skeleton = sm.smooth_skeletonize(
+            self.segmentation
+        )  # FEEDING IN SEGMENTATION INSTEAD... WEIRD? NOTE: feeding in the full segmentation (with data range from 1 to 3) works better when visualizing... weird.
+        pr.plot_seg_skeleton(self.segmentation, skel_image, skel_rough, self.skeleton)
+
     def get_ste_drop(self):
         """_summary_"""
         eng = matlab.engine.start_matlab()
@@ -206,34 +213,22 @@ def um19_check():
     patient_UM19.export_to_mat()
 
 
-def brandon_full():
-    test_brandon = Patient4DFlow(
-        "Brandon",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Brandon 8.17.23/",
-        "Segmentation.nrrd",
-    )
+def full_run(patient_id, data_path, seg_path):
+    patient = Patient4DFlow(patient_id, data_path, seg_path)
 
-    test_brandon.convert_to_vti()
-    test_brandon.export_to_mat()
-    test_brandon.get_ste_drop()
-    test_brandon.plot_dp()
-
-
-def carlos_full():
-    test_carlos = Patient4DFlow(
-        "Carlos",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Carlos 8.4.23/",
-        "Segmentation.nrrd",
-    )
-
-    test_carlos.convert_to_vti()
-    test_carlos.export_to_mat()
-    test_carlos.get_ste_drop()
-    test_carlos.plot_dp()
+    patient.select_planes()
+    patient.convert_to_vti()
+    patient.export_to_mat()
+    patient.get_ste_drop()
+    patient.plot_dp()
 
 
 def main():
-    brandon_full()
+    full_run(
+        "Prab",
+        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
+        "Segmentation.nrrd",
+    )
 
 
 if __name__ == "__main__":

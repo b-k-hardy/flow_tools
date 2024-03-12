@@ -28,15 +28,18 @@ def plot_dp(time: np.ndarray, dp: np.ndarray, id: str) -> plt.Figure:
     return fig
 
 
-def plot_seg(
-    grid: tuple[np.ndarray, np.ndarray, np.ndarray],
+def plot_seg_skeleton(
     segmentation,
     skeleton,
     skeleton_points,
     spline,
 ):
 
-    X, Y, Z = grid
+    xv = np.arange(0, segmentation.shape[0], 1)
+    yv = np.arange(0, segmentation.shape[1], 1)
+    zv = np.arange(0, segmentation.shape[2], 1)
+
+    X, Y, Z = np.meshgrid(xv, yv, zv, indexing="ij")
 
     fig = go.Figure()
 
@@ -50,6 +53,7 @@ def plot_seg(
             isomax=1.0,
             opacity=0.1,  # needs to be small to see through all surfaces
             surface_count=2,  # needs to be a large number for good volume rendering
+            showscale=False,
         )
     )
 
@@ -61,8 +65,9 @@ def plot_seg(
             value=skeleton.flatten(),
             isomin=0.9,
             isomax=1.0,
-            opacity=0.1,  # needs to be small to see through all surfaces
-            surface_count=2,  # needs to be a large number for good volume rendering
+            opacity=0.5,  # needs to be small to see through all surfaces
+            surface_count=10,  # needs to be a large number for good volume rendering
+            showscale=False,
         )
     )
 
