@@ -234,12 +234,6 @@ def main():
     prab.add_skeleton()
     prab.draw_planes()
 
-    full_run(
-        "Prab",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
-        "Segmentation.nrrd",
-    )
-
 
 if __name__ == "__main__":
     main()

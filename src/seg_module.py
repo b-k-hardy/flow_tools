@@ -137,23 +137,55 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
         )
     )
 
-    plane = find_planes(
-        np.array([spline_points[0][20], spline_points[1][20], spline_points[2][20]]),
-        np.array([spline_deriv[0][20], spline_deriv[1][20], spline_deriv[2][20]]),
-    )
-
-    fig.add_trace(
-        go.Scatter3d(
-            x=plane[:, 0],
-            y=plane[:, 1],
-            z=plane[:, 2],
-            marker=dict(
-                size=4,
-                colorscale="Viridis",
-            ),
-            line=dict(color="blue", width=2),
+    for i in range(len(spline_points[0])):
+        plane = find_planes(
+            np.array([spline_points[0][i], spline_points[1][i], spline_points[2][i]]),
+            np.array([spline_deriv[0][i], spline_deriv[1][i], spline_deriv[2][i]]),
         )
-    )
+
+        fig.add_trace(
+            go.Scatter3d(
+                visible=False,
+                x=plane[:, 0],
+                y=plane[:, 1],
+                z=plane[:, 2],
+                marker=dict(
+                    size=4,
+                    colorscale="Viridis",
+                ),
+                line=dict(color="blue", width=2),
+            )
+        )
+
+    # Make 12th trace visible
+    fig.data[12].visible = True
+
+    # Create and add slider
+    steps = []
+    for i in range(len(fig.data)):
+        step = dict(
+            method="update",
+            args=[
+                {"visible": [False] * len(fig.data)},  # NOTE: THIS ISDEFINITELY WRONG
+                {"title": "Slider switched to step: " + str(i)},
+            ],  # layout attribute
+        )
+
+        step["args"][0]["visible"][0] = True  # Toggle i'th trace to "visible"
+        step["args"][0]["visible"][1] = True  # Toggle i'th trace to "visible"
+        step["args"][0]["visible"][i] = True  # Toggle i'th trace to "visible"
+        steps.append(step)
+
+    sliders = [
+        dict(
+            active=10,
+            currentvalue={"prefix": "Frequency: "},
+            pad={"t": 50},
+            steps=steps,
+        )
+    ]
+
+    fig.update_layout(sliders=sliders, xaxis_fixedrange=True, yaxis_fixedrange=True)
 
     fig.show()
 
