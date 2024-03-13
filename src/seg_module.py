@@ -12,8 +12,18 @@ def create_distance_matrix(points):
 
 
 # VECTORIZE AND FIND ALL??
-def find_planes(points, normals):
+# Could also attempt to defind some kind of polar coordinate system along centerline???
+# trouble is that I'll have to then transform to cartesian coordinates...
+def find_planes(points: np.ndarray, normals: np.ndarray) -> np.ndarray:
+    """_summary_
 
+    Args:
+        points (np.ndarray): _description_
+        normals (np.ndarray): _description_
+
+    Returns:
+        np.ndarray: _description_
+    """
     normals = normals / np.linalg.norm(normals)
     d = np.dot(normals, points)
 
