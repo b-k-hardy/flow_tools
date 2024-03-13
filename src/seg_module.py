@@ -1,14 +1,14 @@
 import numpy as np
 import plotly.graph_objects as go
-from python_tsp.distances import euclidean_distance_matrix
 from scipy.interpolate import splev, splprep
 from skimage.morphology import skeletonize_3d
 
 
 # goal is to essentially create a GREEDY traveling salesman...
+# absolutely no idea what this nonsense is.
+# might consider just fitting a line directly to the data... locally-weighted regression? Not sure...
 def create_distance_matrix(points):
-
-    return -1
+    return np.sqrt(((points[:, :, None] - points[:, :, None].T) ** 2).sum(axis=1))
 
 
 # VECTORIZE AND FIND ALL??
@@ -78,7 +78,7 @@ def smooth_skeletonize(segmentation):
     )  # scikit-image will automatically downcast; doing it explicitly will save computation time
     points = np.array(np.nonzero(skel)).T
 
-    distance_matrix = euclidean_distance_matrix(points)
+    distance_matrix = create_distance_matrix(points)
     start = np.argmax(points[:, 0])
     best_path = greedy_tsp(distance_matrix, start)
     points = points[best_path]
