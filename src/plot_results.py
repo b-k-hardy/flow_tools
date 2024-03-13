@@ -29,11 +29,11 @@ def plot_dp(time: np.ndarray, dp: np.ndarray, id: str) -> plt.Figure:
 
 
 def plot_seg_skeleton(
-    segmentation,
-    skeleton,
+    segmentation: np.ndarray,
+    skeleton: np.ndarray,
     skeleton_points,
     spline,
-):
+) -> None:
 
     xv = np.arange(0, segmentation.shape[0], 1)
     yv = np.arange(0, segmentation.shape[1], 1)
@@ -65,8 +65,8 @@ def plot_seg_skeleton(
             value=skeleton.flatten(),
             isomin=0.9,
             isomax=1.0,
-            opacity=0.5,  # needs to be small to see through all surfaces
-            surface_count=10,  # needs to be a large number for good volume rendering
+            opacity=0.9,  # needs to be small to see through all surfaces
+            surface_count=2,  # needs to be a large number for good volume rendering
             showscale=False,
         )
     )
@@ -98,8 +98,6 @@ def plot_seg_skeleton(
     )
 
     fig.show()
-
-    return None
 
 
 def main():
