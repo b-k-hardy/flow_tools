@@ -42,7 +42,7 @@ def find_planes(points: np.ndarray, normals: np.ndarray) -> np.ndarray:
         + np.outer(vv, np.array([param_2, 0.0, 1.0]))
     )
 
-    r = np.linspace(0.1, 5, 6, endpoint=True)
+    r = np.linspace(0.1, 5, 4, endpoint=True)
     theta = np.linspace(0, 2 * np.pi, 20)
 
     rv, thetav = np.meshgrid(r, theta)
@@ -140,7 +140,7 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
             isomin=0.9,
             isomax=1.0,
             opacity=0.1,  # needs to be small to see through all surfaces
-            surface_count=2,  # needs to be a large number for good volume rendering
+            surface_count=1,  # needs to be a large number for good volume rendering
             showscale=False,
         )
     )
@@ -170,6 +170,7 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
                 x=plane[0],
                 y=plane[1],
                 z=plane[2],
+                showscale=False,
                 # marker=dict(
                 #    size=4,
                 #    colorscale="Viridis",
@@ -188,7 +189,7 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
             method="update",
             args=[
                 {"visible": [False] * len(fig.data)},  # NOTE: THIS ISDEFINITELY WRONG
-                {"title": "Slider switched to step: " + str(i)},
+                {"title": "Slider switched to plane: " + str(i)},
             ],  # layout attribute
         )
 
@@ -205,8 +206,14 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
             steps=steps,
         )
     ]
-    fig.update_scenes(aspectmode="data")
-    fig.update_layout(sliders=sliders, xaxis_fixedrange=True, yaxis_fixedrange=True)
+    fig.update_layout(
+        scene=dict(
+            aspectmode="data",
+        ),
+        sliders=sliders,
+        xaxis_fixedrange=True,
+        yaxis_fixedrange=True,
+    )
 
     # fig.layout.yaxis.scaleanchor = "x"
     # fig.layout.zaxis.scaleanchor = "x"
