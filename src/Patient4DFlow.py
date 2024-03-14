@@ -174,7 +174,7 @@ class Patient4DFlow:
         skel_image, skel_rough, self.skeleton, self.skeleton_derivative = (
             sm.smooth_skeletonize(self.segmentation)
         )  # FEEDING IN SEGMENTATION INSTEAD... WEIRD? NOTE: feeding in the full segmentation (with data range from 1 to 3) works better when visualizing... weird.
-        pr.plot_seg_skeleton(self.segmentation, skel_image, skel_rough, self.skeleton)
+        # pr.plot_seg_skeleton(self.segmentation, skel_image, skel_rough, self.skeleton)
 
     def draw_planes(self):
         sm.plane_drawer(self.segmentation, self.skeleton, self.skeleton_derivative)
