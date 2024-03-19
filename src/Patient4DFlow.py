@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 
 import matlab.engine
@@ -10,9 +11,10 @@ from tqdm import tqdm
 
 import plot_results as pr
 import read_dicoms as rd
-import seg_module as sm
+import seg_module as sm  # init seems to have fixed these paths??? very interesting...
 
 PA_TO_MMHG = 0.00750061683
+PVPYTHON_PATH = "/Applications/ParaView-5.12.0.app/Contents/bin/pvpython"  # could also try pvbatch..
 
 
 class Patient4DFlow:
@@ -146,6 +148,7 @@ class Patient4DFlow:
 
         # navigate MATLAB instance to current working directory to call custom function
         print("Exporting velocity structs...")
+        eng.addpath(eng.genpath("src"))
         eng.export_struct(
             output_dir + f"/{self.ID}_vel.mat",
             self.flow_data,
@@ -183,8 +186,9 @@ class Patient4DFlow:
         """_summary_"""
         eng = matlab.engine.start_matlab()
 
-        eng.addpath(eng.genpath("../vwerp"))
+        eng.addpath(eng.genpath("vwerp"))
 
+        # eng.cd("vwerp")
         times, dP, P = eng.get_ste_pressure_estimate_py(
             f"{self.dir}/{self.ID}_mat_files/{self.ID}_vel.mat",
             f"{self.dir}/{self.ID}_mat_files/{self.ID}_masks.mat",
@@ -197,9 +201,32 @@ class Patient4DFlow:
         self.dp_STE = np.array(dP).flatten() * PA_TO_MMHG
         self.p_STE = np.array(P) * PA_TO_MMHG
 
+    # NOTE: CURRENTLY ASSUMING RESAMPLING FACTOR of 2...
+    def export_p_field(self, output_dir: None | str = None) -> None:
+
+        if output_dir is not None:
+            output_dir = f"{self.dir}/{output_dir}"
+        else:
+            output_dir = f"{self.dir}/{self.ID}_STE_vti"
+
+        # make sure output path exists, create directory if not
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+        print("\nExporting pressure to VTI...")
+        for t in tqdm(range(self.p_STE.shape[-1])):
+
+            # write pressure field one timestep at a time
+            p = self.p_STE[:, :, :, t].copy()  # * self.mask
+            out_path = f"{output_dir}/{self.ID}_p_STE_{t:03d}"
+
+            imageToVTK(
+                out_path, spacing=(self.dx / 2).tolist(), cellData={"Pressure": p}
+            )
+
     def plot_dp(self):
         figure = pr.plot_dp(self.times, self.dp_STE, self.ID)
-        plt.show()
+        # plt.show()
+        figure.savefig(f"{self.ID}_STE_dP.png", dpi=400)
 
 
 def um19_check():
@@ -221,18 +248,34 @@ def full_run(patient_id, data_path, seg_path):
     patient.convert_to_vti()
     patient.export_to_mat()
     patient.get_ste_drop()
+    patient.export_p_field()
     patient.plot_dp()
 
 
 def main():
-    prab = Patient4DFlow(
+    """
+    full_run(
+        "Carlos",
+        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Carlos 8.4.23/",
+        "Segmentation.nrrd",
+    )
+    """
+
+    full_run(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
         "Segmentation.nrrd",
     )
 
-    prab.add_skeleton()
-    prab.draw_planes()
+    subprocess.run([PVPYTHON_PATH, "paraview_trace.py"])
+
+    """
+    full_run(
+        "Brandon",
+        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Brandon 8.17.23/",
+        "Segmentation.nrrd",
+    )
+    """
 
 
 if __name__ == "__main__":
