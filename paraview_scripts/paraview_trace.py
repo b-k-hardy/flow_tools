@@ -4,52 +4,42 @@
 # paraview.compatibility.major = 5
 # paraview.compatibility.minor = 12
 
-# NO IDEA IF THE INIT IS EVEN NECESSARY... PROBABLY
+# NO IDEA IF THE INIT IS EVEN NECESSARY... PROBABLY NOT
+
+import argparse
 
 #### import the simple module from the paraview
 from paraview.simple import *
 
+parser = argparse.ArgumentParser(
+    prog="paraview_trace.py", description="Automatic Paraview post-processing"
+)
+
+
+parser.add_argument("ID", type=str, help="Patient ID")
+parser.add_argument("data_path", type=str, help="Path to the data")
+parser.add_argument("n_timesteps", type=int, help="Number of timesteps")
+
+args = parser.parse_args()
+
+ID = args.ID
+data_path = args.data_path
+Nt = args.n_timesteps
+
+
 #### disable automatic camera reset on 'Show'
 paraview.simple._DisableFirstRenderCameraReset()
 
+
+# Filename = [f"{data_path}/{ID}_flow_vti/{ID}_flow_{i:03d}.vti" for i in range(Nt)]
+
+# FIXME: figure out some way to automate this dumb list thing. I hate it. Maybe some fancy list comprehension?
 # create a new 'XML Image Data Reader'
-prab_flow_000vti = XMLImageDataReader(
-    registrationName="Prab_flow_000.vti*",
-    FileName=[
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_000.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_001.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_002.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_003.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_004.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_005.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_006.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_007.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_008.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_009.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_010.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_011.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_012.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_013.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_014.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_015.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_016.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_017.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_018.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_019.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_020.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_021.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_022.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_023.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_024.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_025.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_026.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_027.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_028.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_029.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_flow_vti/Prab_flow_030.vti",
-    ],
+flow_vti = XMLImageDataReader(
+    registrationName=f"{ID}_flow_000.vti*",
+    FileName=[f"{data_path}/{ID}_flow_vti/{ID}_flow_{i:03d}.vti" for i in range(Nt)],
 )
-prab_flow_000vti.CellArrayStatus = ["Velocity"]
+flow_vti.CellArrayStatus = ["Velocity"]
 
 # get animation scene
 animationScene1 = GetAnimationScene()
@@ -57,48 +47,46 @@ animationScene1 = GetAnimationScene()
 # update animation scene based on data timesteps
 animationScene1.UpdateAnimationUsingDataTimeSteps()
 
-# Properties modified on prab_flow_000vti
-prab_flow_000vti.TimeArray = "None"
+# Properties modified on {ID}_flow_000vti
+flow_vti.TimeArray = "None"
 
 # get active view
 renderView1 = GetActiveViewOrCreate("RenderView")
 
 # show data in view
-prab_flow_000vtiDisplay = Show(
-    prab_flow_000vti, renderView1, "UniformGridRepresentation"
-)
+flow_vtiDisplay = Show(flow_vti, renderView1, "UniformGridRepresentation")
 
 # trace defaults for the display properties.
-prab_flow_000vtiDisplay.Representation = "Outline"
-prab_flow_000vtiDisplay.ColorArrayName = [None, ""]
-prab_flow_000vtiDisplay.SelectTCoordArray = "None"
-prab_flow_000vtiDisplay.SelectNormalArray = "None"
-prab_flow_000vtiDisplay.SelectTangentArray = "None"
-prab_flow_000vtiDisplay.OSPRayScaleArray = "Velocity"
-prab_flow_000vtiDisplay.OSPRayScaleFunction = "Piecewise Function"
-prab_flow_000vtiDisplay.Assembly = ""
-prab_flow_000vtiDisplay.SelectOrientationVectors = "Velocity"
-prab_flow_000vtiDisplay.ScaleFactor = 0.04200000000000001
-prab_flow_000vtiDisplay.SelectScaleArray = "None"
-prab_flow_000vtiDisplay.GlyphType = "Arrow"
-prab_flow_000vtiDisplay.GlyphTableIndexArray = "None"
-prab_flow_000vtiDisplay.GaussianRadius = 0.0021000000000000003
-prab_flow_000vtiDisplay.SetScaleArray = ["POINTS", "Velocity"]
-prab_flow_000vtiDisplay.ScaleTransferFunction = "Piecewise Function"
-prab_flow_000vtiDisplay.OpacityArray = ["POINTS", "Velocity"]
-prab_flow_000vtiDisplay.OpacityTransferFunction = "Piecewise Function"
-prab_flow_000vtiDisplay.DataAxesGrid = "Grid Axes Representation"
-prab_flow_000vtiDisplay.PolarAxes = "Polar Axes Representation"
-prab_flow_000vtiDisplay.ScalarOpacityUnitDistance = 0.0052486676005553574
-prab_flow_000vtiDisplay.OpacityArrayName = ["CELLS", "Velocity"]
-prab_flow_000vtiDisplay.ColorArray2Name = ["CELLS", "Velocity"]
-prab_flow_000vtiDisplay.SliceFunction = "Plane"
-prab_flow_000vtiDisplay.Slice = 28
-prab_flow_000vtiDisplay.SelectInputVectors = ["POINTS", "Velocity"]
-prab_flow_000vtiDisplay.WriteLog = ""
+flow_vtiDisplay.Representation = "Outline"
+flow_vtiDisplay.ColorArrayName = [None, ""]
+flow_vtiDisplay.SelectTCoordArray = "None"
+flow_vtiDisplay.SelectNormalArray = "None"
+flow_vtiDisplay.SelectTangentArray = "None"
+flow_vtiDisplay.OSPRayScaleArray = "Velocity"
+flow_vtiDisplay.OSPRayScaleFunction = "Piecewise Function"
+flow_vtiDisplay.Assembly = ""
+flow_vtiDisplay.SelectOrientationVectors = "Velocity"
+flow_vtiDisplay.ScaleFactor = 0.04200000000000001
+flow_vtiDisplay.SelectScaleArray = "None"
+flow_vtiDisplay.GlyphType = "Arrow"
+flow_vtiDisplay.GlyphTableIndexArray = "None"
+flow_vtiDisplay.GaussianRadius = 0.0021000000000000003
+flow_vtiDisplay.SetScaleArray = ["POINTS", "Velocity"]
+flow_vtiDisplay.ScaleTransferFunction = "Piecewise Function"
+flow_vtiDisplay.OpacityArray = ["POINTS", "Velocity"]
+flow_vtiDisplay.OpacityTransferFunction = "Piecewise Function"
+flow_vtiDisplay.DataAxesGrid = "Grid Axes Representation"
+flow_vtiDisplay.PolarAxes = "Polar Axes Representation"
+flow_vtiDisplay.ScalarOpacityUnitDistance = 0.0052486676005553574
+flow_vtiDisplay.OpacityArrayName = ["CELLS", "Velocity"]
+flow_vtiDisplay.ColorArray2Name = ["CELLS", "Velocity"]
+flow_vtiDisplay.SliceFunction = "Plane"
+flow_vtiDisplay.Slice = 28
+flow_vtiDisplay.SelectInputVectors = ["POINTS", "Velocity"]
+flow_vtiDisplay.WriteLog = ""
 
 # init the 'Piecewise Function' selected for 'ScaleTransferFunction'
-prab_flow_000vtiDisplay.ScaleTransferFunction.Points = [
+flow_vtiDisplay.ScaleTransferFunction.Points = [
     -0.5029296875,
     0.0,
     0.5,
@@ -110,7 +98,7 @@ prab_flow_000vtiDisplay.ScaleTransferFunction.Points = [
 ]
 
 # init the 'Piecewise Function' selected for 'OpacityTransferFunction'
-prab_flow_000vtiDisplay.OpacityTransferFunction.Points = [
+flow_vtiDisplay.OpacityTransferFunction.Points = [
     -0.5029296875,
     0.0,
     0.5,
@@ -122,7 +110,7 @@ prab_flow_000vtiDisplay.OpacityTransferFunction.Points = [
 ]
 
 # init the 'Plane' selected for 'SliceFunction'
-prab_flow_000vtiDisplay.SliceFunction.Origin = [0.21000000000000002, 0.168, 0.056]
+flow_vtiDisplay.SliceFunction.Origin = [0.21000000000000002, 0.168, 0.056]
 
 # reset view to fit data
 renderView1.ResetCamera(False, 0.9)
@@ -134,7 +122,7 @@ materialLibrary1 = GetMaterialLibrary()
 renderView1.Update()
 
 # create a new 'Threshold'
-threshold1 = Threshold(registrationName="Threshold1", Input=prab_flow_000vti)
+threshold1 = Threshold(registrationName="Threshold1", Input=flow_vti)
 threshold1.Scalars = ["CELLS", "Velocity"]
 threshold1.LowerThreshold = -0.5029296875
 threshold1.UpperThreshold = 0.5830078125
@@ -201,7 +189,7 @@ threshold1Display.OpacityTransferFunction.Points = [
 renderView1.Update()
 
 # hide data in view
-Hide(prab_flow_000vti, renderView1)
+Hide(flow_vti, renderView1)
 
 renderView1.ApplyIsometricView()
 
@@ -350,83 +338,55 @@ renderView2.OSPRayMaterialLibrary = materialLibrary1
 AssignViewToLayout(view=renderView2, layout=layout1, hint=2)
 
 # create a new 'XML Image Data Reader'
-prab_p_STE_000vti = XMLImageDataReader(
-    registrationName="Prab_p_STE_000.vti*",
+
+#   FileName=[f"{data_path}/{ID}_flow_vti/{ID}_flow_{i:03d}.vti" for i in range(Nt)],
+
+p_STE_vti = XMLImageDataReader(
+    registrationName=f"{ID}_p_STE_000.vti*",
     FileName=[
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_000.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_001.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_002.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_003.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_004.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_005.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_006.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_007.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_008.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_009.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_010.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_011.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_012.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_013.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_014.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_015.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_016.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_017.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_018.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_019.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_020.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_021.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_022.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_023.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_024.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_025.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_026.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_027.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_028.vti",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/Prab_STE_vti/Prab_p_STE_029.vti",
+        f"{data_path}/{ID}_STE_vti/{ID}_p_STE_{i:03d}.vti" for i in range(Nt - 1)
     ],
 )
-prab_p_STE_000vti.CellArrayStatus = ["Pressure"]
+p_STE_vti.CellArrayStatus = ["Pressure"]
 
-# Properties modified on prab_p_STE_000vti
-prab_p_STE_000vti.TimeArray = "None"
+# Properties modified on {ID}_p_STE_000vti
+p_STE_vti.TimeArray = "None"
 
 # show data in view
-prab_p_STE_000vtiDisplay = Show(
-    prab_p_STE_000vti, renderView2, "UniformGridRepresentation"
-)
+p_STE_vtiDisplay = Show(p_STE_vti, renderView2, "UniformGridRepresentation")
 
 # trace defaults for the display properties.
-prab_p_STE_000vtiDisplay.Representation = "Outline"
-prab_p_STE_000vtiDisplay.ColorArrayName = ["CELLS", ""]
-prab_p_STE_000vtiDisplay.SelectTCoordArray = "None"
-prab_p_STE_000vtiDisplay.SelectNormalArray = "None"
-prab_p_STE_000vtiDisplay.SelectTangentArray = "None"
-prab_p_STE_000vtiDisplay.OSPRayScaleArray = "Pressure"
-prab_p_STE_000vtiDisplay.OSPRayScaleFunction = "Piecewise Function"
-prab_p_STE_000vtiDisplay.Assembly = ""
-prab_p_STE_000vtiDisplay.SelectOrientationVectors = "None"
-prab_p_STE_000vtiDisplay.ScaleFactor = 0.04252500000000001
-prab_p_STE_000vtiDisplay.SelectScaleArray = "Pressure"
-prab_p_STE_000vtiDisplay.GlyphType = "Arrow"
-prab_p_STE_000vtiDisplay.GlyphTableIndexArray = "Pressure"
-prab_p_STE_000vtiDisplay.GaussianRadius = 0.00212625
-prab_p_STE_000vtiDisplay.SetScaleArray = ["POINTS", "Pressure"]
-prab_p_STE_000vtiDisplay.ScaleTransferFunction = "Piecewise Function"
-prab_p_STE_000vtiDisplay.OpacityArray = ["POINTS", "Pressure"]
-prab_p_STE_000vtiDisplay.OpacityTransferFunction = "Piecewise Function"
-prab_p_STE_000vtiDisplay.DataAxesGrid = "Grid Axes Representation"
-prab_p_STE_000vtiDisplay.PolarAxes = "Polar Axes Representation"
-prab_p_STE_000vtiDisplay.ScalarOpacityUnitDistance = 0.0026074143193960567
-prab_p_STE_000vtiDisplay.OpacityArrayName = ["CELLS", "Pressure"]
-prab_p_STE_000vtiDisplay.ColorArray2Name = ["CELLS", "Pressure"]
-prab_p_STE_000vtiDisplay.IsosurfaceValues = [0.6893318007300475]
-prab_p_STE_000vtiDisplay.SliceFunction = "Plane"
-prab_p_STE_000vtiDisplay.Slice = 58
-prab_p_STE_000vtiDisplay.SelectInputVectors = [None, ""]
-prab_p_STE_000vtiDisplay.WriteLog = ""
+p_STE_vtiDisplay.Representation = "Outline"
+p_STE_vtiDisplay.ColorArrayName = ["CELLS", ""]
+p_STE_vtiDisplay.SelectTCoordArray = "None"
+p_STE_vtiDisplay.SelectNormalArray = "None"
+p_STE_vtiDisplay.SelectTangentArray = "None"
+p_STE_vtiDisplay.OSPRayScaleArray = "Pressure"
+p_STE_vtiDisplay.OSPRayScaleFunction = "Piecewise Function"
+p_STE_vtiDisplay.Assembly = ""
+p_STE_vtiDisplay.SelectOrientationVectors = "None"
+p_STE_vtiDisplay.ScaleFactor = 0.04252500000000001
+p_STE_vtiDisplay.SelectScaleArray = "Pressure"
+p_STE_vtiDisplay.GlyphType = "Arrow"
+p_STE_vtiDisplay.GlyphTableIndexArray = "Pressure"
+p_STE_vtiDisplay.GaussianRadius = 0.00212625
+p_STE_vtiDisplay.SetScaleArray = ["POINTS", "Pressure"]
+p_STE_vtiDisplay.ScaleTransferFunction = "Piecewise Function"
+p_STE_vtiDisplay.OpacityArray = ["POINTS", "Pressure"]
+p_STE_vtiDisplay.OpacityTransferFunction = "Piecewise Function"
+p_STE_vtiDisplay.DataAxesGrid = "Grid Axes Representation"
+p_STE_vtiDisplay.PolarAxes = "Polar Axes Representation"
+p_STE_vtiDisplay.ScalarOpacityUnitDistance = 0.0026074143193960567
+p_STE_vtiDisplay.OpacityArrayName = ["CELLS", "Pressure"]
+p_STE_vtiDisplay.ColorArray2Name = ["CELLS", "Pressure"]
+p_STE_vtiDisplay.IsosurfaceValues = [0.6893318007300475]
+p_STE_vtiDisplay.SliceFunction = "Plane"
+p_STE_vtiDisplay.Slice = 58
+p_STE_vtiDisplay.SelectInputVectors = [None, ""]
+p_STE_vtiDisplay.WriteLog = ""
 
 # init the 'Piecewise Function' selected for 'ScaleTransferFunction'
-prab_p_STE_000vtiDisplay.ScaleTransferFunction.Points = [
+p_STE_vtiDisplay.ScaleTransferFunction.Points = [
     -1.9337503982804463,
     0.0,
     0.5,
@@ -438,7 +398,7 @@ prab_p_STE_000vtiDisplay.ScaleTransferFunction.Points = [
 ]
 
 # init the 'Piecewise Function' selected for 'OpacityTransferFunction'
-prab_p_STE_000vtiDisplay.OpacityTransferFunction.Points = [
+p_STE_vtiDisplay.OpacityTransferFunction.Points = [
     -1.9337503982804463,
     0.0,
     0.5,
@@ -450,7 +410,7 @@ prab_p_STE_000vtiDisplay.OpacityTransferFunction.Points = [
 ]
 
 # init the 'Plane' selected for 'SliceFunction'
-prab_p_STE_000vtiDisplay.SliceFunction.Origin = [0.212625, 0.170625, 0.058]
+p_STE_vtiDisplay.SliceFunction.Origin = [0.212625, 0.170625, 0.058]
 
 # reset view to fit data
 renderView2.ResetCamera(False, 0.9)
@@ -459,7 +419,7 @@ renderView2.ResetCamera(False, 0.9)
 renderView2.Update()
 
 # create a new 'Threshold'
-threshold2 = Threshold(registrationName="Threshold2", Input=prab_p_STE_000vti)
+threshold2 = Threshold(registrationName="Threshold2", Input=p_STE_vti)
 threshold2.Scalars = ["CELLS", "Pressure"]
 threshold2.LowerThreshold = -1.9337503982804463
 threshold2.UpperThreshold = 3.3124139997405413
@@ -573,7 +533,7 @@ pressureLUT.RescaleTransferFunction(-1.9337503982804463, 3.3124139997405413)
 pressurePWF.RescaleTransferFunction(-1.9337503982804463, 3.3124139997405413)
 
 # hide data in view
-Hide(prab_p_STE_000vti, renderView2)
+Hide(p_STE_vti, renderView2)
 
 renderView2.ResetActiveCameraToPositiveZ()
 
@@ -964,9 +924,9 @@ renderView2.CameraViewUp = [
 renderView2.CameraViewAngle = 23.697148475909536
 renderView2.CameraParallelScale = 0.1625897925890296
 
-# save animation
+# save animationf"{data_path}/{ID}_STE_vti/{ID}_p_STE_{i:03d}.vti" for i in range(Nt - 1)
 SaveAnimation(
-    filename="/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/vid_attempt.avi",
+    filename=f"{data_path}/{ID}_vid.avi",
     viewOrLayout=layout1,
     location=16,
     SaveAllViews=1,

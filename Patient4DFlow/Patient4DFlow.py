@@ -229,6 +229,17 @@ class Patient4DFlow:
         # plt.show()
         figure.savefig(f"{self.ID}_STE_dP.png", dpi=400)
 
+    def paraview_analysis(self):
+        subprocess.run(
+            [
+                PVPYTHON_PATH,
+                "paraview_scripts/paraview_trace.py",
+                self.ID,
+                self.dir,
+                str(self.mag_data.shape[-1]),
+            ]
+        )
+
 
 def um19_check():
     patient_UM19 = Patient4DFlow(
@@ -268,7 +279,7 @@ def main():
         "Segmentation.nrrd",
     )
 
-    subprocess.run([PVPYTHON_PATH, "paraview_scripts/paraview_trace.py"])
+    prab.paraview_analysis()
 
     """
     full_run(
