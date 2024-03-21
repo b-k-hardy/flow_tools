@@ -187,7 +187,7 @@ class Patient4DFlow:
         """_summary_"""
         eng = matlab.engine.start_matlab()
 
-        eng.addpath(eng.genpath("vwerp"))
+        eng.addpath(eng.genpath("../vwerp"))
 
         # eng.cd("vwerp")
         times, dP, P = eng.get_ste_pressure_estimate_py(
@@ -273,13 +273,11 @@ def main():
     )
     """
 
-    prab = Patient4DFlow(
+    full_run(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
         "Segmentation.nrrd",
     )
-
-    prab.paraview_analysis()
 
     """
     full_run(
