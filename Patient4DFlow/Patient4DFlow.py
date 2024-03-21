@@ -4,17 +4,18 @@ from pathlib import Path
 import matlab.engine
 import matplotlib.pyplot as plt
 import numpy as np
+import plot_results as pr
 import pyvista as pv
+import read_dicoms as rd
+import seg_module as sm  # init seems to have fixed these paths??? very interesting...
 from pyevtk.hl import imageToVTK
 from scipy import ndimage
 from tqdm import tqdm
 
-import plot_results as pr
-import read_dicoms as rd
-import seg_module as sm  # init seems to have fixed these paths??? very interesting...
-
 PA_TO_MMHG = 0.00750061683
-PVPYTHON_PATH = "/Applications/ParaView-5.12.0.app/Contents/bin/pvpython"  # could also try pvbatch..
+PVPYTHON_PATH = (
+    "/Applications/ParaView-5.12.0.app/Contents/bin/pvbatch"  # could also try pvbatch..
+)
 
 
 class Patient4DFlow:
@@ -148,7 +149,7 @@ class Patient4DFlow:
 
         # navigate MATLAB instance to current working directory to call custom function
         print("Exporting velocity structs...")
-        eng.addpath(eng.genpath("src"))
+        eng.addpath(eng.genpath("Patient4DFlow"))
         eng.export_struct(
             output_dir + f"/{self.ID}_vel.mat",
             self.flow_data,
@@ -261,13 +262,13 @@ def main():
     )
     """
 
-    full_run(
+    prab = Patient4DFlow(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
         "Segmentation.nrrd",
     )
 
-    subprocess.run([PVPYTHON_PATH, "paraview_trace.py"])
+    subprocess.run([PVPYTHON_PATH, "paraview_scripts/paraview_trace.py"])
 
     """
     full_run(
