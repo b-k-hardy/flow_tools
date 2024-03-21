@@ -3,9 +3,11 @@
 matlabengine==23.2.2
 matplotlib==3.8.3
 numpy==1.26.4
+plotly==5.19.0
 pydicom==2.4.4
 pyevtk==1.6.0
 pynrrd==1.0.0
 pyvista==0.43.3
+scikit-image==0.22.0
 scipy==1.11.1
 tqdm==4.65.0
