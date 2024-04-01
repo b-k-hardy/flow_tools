@@ -3,6 +3,7 @@ from pathlib import Path
 
 import matlab.engine
 import matplotlib.pyplot as plt
+import nibabel as nib
 import numpy as np
 import plot_results as pr
 import pyvista as pv
@@ -22,7 +23,9 @@ class Patient4DFlow:
     def __init__(self, ID: str, data_directory: str, seg_path: str = "user") -> None:
         self.ID = ID
         self.dir = data_directory
-        self.mag_data, self.flow_data, self.dx, self.dt = rd.import_all_dicoms(self.dir)
+        self.mag_data, self.ssfp_data, self.flow_data, self.dx, self.dt = (
+            rd.import_all_dicoms(self.dir)
+        )
 
         self.flow_data = np.flip(self.flow_data, axis=0)
         self.flow_data[0] *= -1
@@ -233,7 +236,7 @@ class Patient4DFlow:
         subprocess.run(
             [
                 PVPYTHON_PATH,
-                "paraview_scripts/paraview_trace.py",
+                "../paraview_scripts/paraview_trace.py",
                 self.ID,
                 self.dir,
                 str(self.mag_data.shape[-1]),
@@ -273,11 +276,24 @@ def main():
     )
     """
 
-    full_run(
+    prab = Patient4DFlow(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
         "Segmentation.nrrd",
     )
+
+    prab.mask = np.transpose(prab.mask, (2, 1, 0))
+    prab.flow_data = np.transpose(prab.flow_data, (0, 3, 2, 1, 4))
+    prab.ssfp_data = np.transpose(prab.ssfp_data, (2, 1, 0))
+    prab.ssfp_data = np.flip(prab.ssfp_data, axis=(1, 2))
+    prab.flow_data = np.flip(prab.flow_data, axis=0)
+
+    # prab.convert_to_vti()
+
+    img = nib.Nifti1Image(prab.ssfp_data.astype(np.int16).copy(), np.eye(4))
+
+    nib.save(img, "test.nii.gz")
+    # prab.paraview_analysis()
 
     """
     full_run(

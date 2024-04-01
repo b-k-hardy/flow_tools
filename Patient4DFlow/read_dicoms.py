@@ -205,6 +205,78 @@ def import_mag(dicom_path: str, check: None | int = None) -> np.ndarray:
     return img4d
 
 
+def import_ssfp(dicom_path: str, check: None | int = None) -> np.ndarray:
+    """_summary_
+
+    Args:
+        dicom_path (str): _description_
+        check (None | int, optional): _description_. Defaults to None.
+
+    Returns:
+        np.array: _description_
+    """
+    # load the DICOM files
+    files = []
+    print(f"glob: {dicom_path}")
+    for fname in tqdm(glob.glob(dicom_path, recursive=False)):
+        print_out = "/".join(fname.split("/")[-2:])
+        # print(f"loading: {print_out}", end="\r")
+        files.append(pydicom.dcmread(fname))
+
+    print(f"\nfile count: {len(files)}")
+
+    # skip files with no SliceLocation (eg scout views)
+    slices = []
+    skipcount = 0
+    for f in files:
+        if hasattr(f, "SliceLocation"):  # and f.AcquisitionNumber == '16':
+            slices.append(f)
+        else:
+            skipcount = skipcount + 1
+
+    print(f"skipped, no SliceLocation: {skipcount}")
+
+    # ensure they are in the correct order
+    slices.sort(key=lambda s: s.SliceLocation)
+
+    # pixel aspects, assuming all slices are the same
+    ps = slices[0].PixelSpacing
+    ss = slices[0].SliceThickness
+    ax_aspect = ps[1] / ps[0]
+    sag_aspect = ps[1] / ss
+    cor_aspect = ss / ps[0]
+    max_slice = max(slices, key=lambda s: s.AcquisitionNumber)
+
+    # create 3D array
+    img_shape = list(slices[0].pixel_array.shape)
+    Nz = int(len(slices))
+    img_shape.append(Nz)
+    img4d = np.zeros((img_shape[0], img_shape[1], Nz))
+
+    # fill 3D array with the images from the files
+    for i in range(Nz):
+        img2d = slices[i].pixel_array
+        img4d[:, :, i] = img2d
+
+    if check is not None:
+        # plot 3 orthogonal slices to check for correct indexing
+        a1 = plt.subplot(2, 2, 1)
+        plt.imshow(img4d[:, :, img_shape[2] // 2, check], cmap="gray")
+        a1.set_aspect(ax_aspect)
+
+        a2 = plt.subplot(2, 2, 2)
+        plt.imshow(img4d[:, img_shape[1] // 2, :, check], cmap="gray")
+        a2.set_aspect(sag_aspect)
+
+        a3 = plt.subplot(2, 2, 3)
+        plt.imshow(img4d[img_shape[0] // 2, :, :, check].T, cmap="gray")
+        a3.set_aspect(cor_aspect)
+
+        plt.show()
+
+    return img4d
+
+
 def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
     """Function that automatically walks through DICOM directory tree and imports 4D flow files.
 
@@ -217,6 +289,7 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
 
     phase_encoding_IDs = ["ap", "rl", "fh", "in"]
     wip_list = []
+    ssfp_list = []
 
     # 1. Find all DICOM directories
     dir_list = glob.glob(
@@ -236,6 +309,7 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
         except IsADirectoryError:
             continue
 
+        # I NEED TO CHECK FOR SSFP IN SERIES DESCRIPTION AND THEN IF SSFP IS FOUND I WILL CHECK FOR SLICE THICKNESS TO GRAB ACTUAL DATA
         # there can be multiple studies; therefore we should check for SeriesNumber as well
         if "4dflow" in check_file.SeriesDescription.lower() and hasattr(
             check_file, "SequenceName"
@@ -244,6 +318,13 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
             series = check_file.SeriesNumber
             wip_list.append({"wip": wip, "series_num": int(series), "dir": dir_name})
             print(f"Found {wip}!")  # in, ap, fh
+        elif (
+            "ssfp" in check_file.SeriesDescription.lower()
+            and hasattr(check_file, "SequenceName")
+            and int(check_file.SliceThickness) != 0
+        ):
+            ssfp_list.append({"wip": wip, "series_num": int(series), "dir": dir_name})
+            print(f"Found SSFP!")  # NOTE WHAT IS HAPPENING
 
     wip_list.sort(key=lambda w: w["series_num"])
     wip_list = wip_list[-4:]
@@ -262,14 +343,18 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
             w_venc = int(wip[-5:-2])
         else:
             mag_path = dir_name + "*"
+    for item in ssfp_list:
+        dir_name = item["dir"]
+        ssfp_path = dir_name + "*"
 
     flow_paths = (dir_path + u_path, dir_path + v_path, dir_path + w_path)
     vencs = (u_venc, v_venc, w_venc)
 
     mag_data = import_mag(dir_path + mag_path)
+    ssfp_data = import_ssfp(dir_path + ssfp_path)
     flow_data, dx, dt = import_flow(flow_paths, vencs)
 
-    return mag_data, flow_data, dx, dt
+    return mag_data, ssfp_data, flow_data, dx, dt
 
 
 def main():
