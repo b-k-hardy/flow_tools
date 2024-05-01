@@ -323,6 +323,10 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
             and hasattr(check_file, "SequenceName")
             and int(check_file.SliceThickness) != 0
         ):
+            wip = (
+                check_file.SequenceName
+            )  # FIXME: why was this gone? How did appending a fake wip ever work even once??
+            series = check_file.SeriesNumber
             ssfp_list.append({"wip": wip, "series_num": int(series), "dir": dir_name})
             print(f"Found SSFP!")  # NOTE WHAT IS HAPPENING
 
