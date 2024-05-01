@@ -267,7 +267,24 @@ def full_run(patient_id, data_path, seg_path):
     patient.plot_dp()
 
 
+def welcome():
+    print("")
+    print("   ___       __    ______                                 _____")
+    print("   __ |     / /_______  /__________________ ________      __  /______")
+    print("   __ | /| / /_  _ \\_  /_  ___/  __ \\_  __ `__ \\  _ \\     _  __/  __ \\")
+    print("   __ |/ |/ / /  __/  / / /__ / /_/ /  / / / / /  __/     / /_ / /_/ /")
+    print("   ____/|__/  \\___//_/  \\___/ \\____//_/ /_/ /_/\\___/      \\__/ \\____/")
+    print("")
+    print("     _____________                    _____            ______")
+    print("     ___  __/__  /________      __    __  /_______________  /_______")
+    print("     __  /_ __  /_  __ \\_ | /| / /    _  __/  __ \\  __ \\_  /__  ___/")
+    print("     _  __/ _  / / /_/ /_ |/ |/ /     / /_ / /_/ / /_/ /  / _(__  )")
+    print("     /_/    /_/  \\____/____/|__/______\\__/ \\____/\\____//_/  /____/")
+    print("                               _/_____/\n")
+
+
 def main():
+    welcome()
     """
     full_run(
         "Carlos",
@@ -276,6 +293,15 @@ def main():
     )
     """
 
+    green = Patient4DFlow(
+        "Green",
+        "/Users/bkhardy/Dropbox (University of Michigan)/Green/MRI 4.11.24/",
+        "Segmentation.nrrd",
+    )
+
+    green.convert_to_vti()
+
+    """
     prab = Patient4DFlow(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
@@ -288,12 +314,14 @@ def main():
     prab.ssfp_data = np.flip(prab.ssfp_data, axis=(1, 2))
     prab.flow_data = np.flip(prab.flow_data, axis=0)
 
-    # prab.convert_to_vti()
+    prab.convert_to_vti()
 
     img = nib.Nifti1Image(prab.ssfp_data.astype(np.int16).copy(), np.eye(4))
 
     nib.save(img, "test.nii.gz")
-    # prab.paraview_analysis()
+
+    prab.paraview_analysis()
+    """
 
     """
     full_run(
