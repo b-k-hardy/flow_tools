@@ -295,7 +295,7 @@ def main():
 
     green = Patient4DFlow(
         "Green",
-        "/Users/bkhardy/Dropbox (University of Michigan)/Green/MRI 4.11.24/",
+        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow R01/Green/MRI 4.11.24/",
         "Segmentation.nrrd",
     )
 

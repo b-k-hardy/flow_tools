@@ -328,7 +328,7 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
             )  # FIXME: why was this gone? How did appending a fake wip ever work even once??
             series = check_file.SeriesNumber
             ssfp_list.append({"wip": wip, "series_num": int(series), "dir": dir_name})
-            print(f"Found SSFP!")  # NOTE WHAT IS HAPPENING
+            print("Found SSFP!")  # NOTE WHAT IS HAPPENING
 
     wip_list.sort(key=lambda w: w["series_num"])
     wip_list = wip_list[-4:]

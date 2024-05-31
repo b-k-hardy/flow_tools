@@ -68,9 +68,10 @@ def find_planes(points: np.ndarray, normals: np.ndarray) -> np.ndarray:
 
 # NOTE: this code has a few weird redundant steps that I can clean up later...
 def greedy_tsp(cost_matrix: np.ndarray, start_idx: int = 0) -> list:
-    """Function that takes inspiration from the classic traveling salesman problem, but implemented with an extremely greedy method.
-    An exact solution is far from guaranteed; the outcome is heavily dependent on the starting index. Essentially, each step in the path
-    is determined by finding whichever adjacent point is the closest.
+    """Function that takes inspiration from the classic traveling salesman problem, but implemented
+    with an extremely greedy method. An exact solution is far from guaranteed; the outcome is heavily
+    dependent on the starting index. Essentially, each step in the path is determined by finding
+    whichever adjacent point is the closest.
 
     Args:
         cost_matrix (np.ndarray): 2D array/matrix that stores the cost (generally some measure of distance) of moving from one point to another.
@@ -106,7 +107,7 @@ def smooth_skeletonize(segmentation):
 
     skel = skeletonize_3d(
         segmentation.astype(np.uint8)
-    )  # scikit-image will automatically downcast; doing it explicitly will save computation time
+    )  # scikit-image will automatically downcast, but doing it explicitly will save computation time
     points = np.array(np.nonzero(skel)).T
 
     distance_matrix = create_distance_matrix(points)
