@@ -3,10 +3,8 @@ from pathlib import Path
 
 import matlab.engine
 import matplotlib.pyplot as plt
-import nibabel as nib
 import numpy as np
 import plot_results as pr
-import pyvista as pv
 import read_dicoms as rd
 import seg_module as sm  # init seems to have fixed these paths??? very interesting...
 from pyevtk.hl import imageToVTK
@@ -14,14 +12,14 @@ from scipy import ndimage
 from tqdm import tqdm
 
 PA_TO_MMHG = 0.00750061683
-PVPYTHON_PATH = (
-    "/Applications/ParaView-5.12.0.app/Contents/bin/pvbatch"  # could also try pvbatch..
-)
+PVPYTHON_PATH = "/Applications/ParaView-5.12.0.app/Contents/bin/pvbatch"
 
 
 class Patient4DFlow:
-    def __init__(self, ID: str, data_directory: str, seg_path: str = "user") -> None:
-        self.ID = ID
+    def __init__(
+        self, patient_id: str, data_directory: str, seg_path: str = "user"
+    ) -> None:
+        self.id = patient_id
         self.dir = data_directory
         self.mag_data, self.ssfp_data, self.flow_data, self.dx, self.dt = (
             rd.import_all_dicoms(self.dir)
@@ -54,7 +52,7 @@ class Patient4DFlow:
         # self.segmentation = self.add_segmentation(path_input="user")
 
     def __str__(self):
-        return f"Patient ID: {self.ID} @ location {self.dir}"
+        return f"Patient ID: {self.id} @ location {self.dir}"
 
     def add_mag(self, path_input):
         if path_input == "user":
@@ -107,8 +105,8 @@ class Patient4DFlow:
         w = self.flow_data[2, :, :, :, 6].copy() * self.mask
         vel = (u, v, w)
 
-        imageToVTK(f"{self.ID}_check_mag", cellData={"Magnitude": mag})
-        imageToVTK(f"{self.ID}_check_vel", cellData={"Velocity": vel})
+        imageToVTK(f"{self.id}_check_mag", cellData={"Magnitude": mag})
+        imageToVTK(f"{self.id}_check_vel", cellData={"Velocity": vel})
 
         # unfortunately it seems like the only solution here is to write a timeframe to disk then load
         # back in. That sucks and is inefficient but whatever.
@@ -121,7 +119,7 @@ class Patient4DFlow:
         if output_dir is not None:
             output_dir = f"{self.dir}/{output_dir}"
         else:
-            output_dir = f"{self.dir}/{self.ID}_flow_vti"
+            output_dir = f"{self.dir}/{self.id}_flow_vti"
 
         # make sure output path exists, create directory if not
         Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -135,7 +133,7 @@ class Patient4DFlow:
             w = self.flow_data[2, :, :, :, t].copy() * self.mask
             vel = (u, v, w)
 
-            out_path = f"{output_dir}/{self.ID}_flow_{t:03d}"
+            out_path = f"{output_dir}/{self.id}_flow_{t:03d}"
 
             imageToVTK(out_path, spacing=self.dx.tolist(), cellData={"Velocity": vel})
 
@@ -145,7 +143,7 @@ class Patient4DFlow:
         if output_dir is not None:
             output_dir = f"{self.dir}/{output_dir}"
         else:
-            output_dir = f"{self.dir}/{self.ID}_mat_files"
+            output_dir = f"{self.dir}/{self.id}_mat_files"
 
         # make sure output path exists, create directory if not
         Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -154,7 +152,7 @@ class Patient4DFlow:
         print("Exporting velocity structs...")
         eng.addpath(eng.genpath("Patient4DFlow"))
         eng.export_struct(
-            output_dir + f"/{self.ID}_vel.mat",
+            output_dir + f"/{self.id}_vel.mat",
             self.flow_data,
             self.dx,
             self.dt,
@@ -164,7 +162,7 @@ class Patient4DFlow:
 
         print("Exporting masks...")
         eng.export_masks(
-            output_dir + f"/{self.ID}_masks.mat",
+            output_dir + f"/{self.id}_masks.mat",
             self.mask,
             self.inlet,
             self.outlet,
@@ -194,8 +192,8 @@ class Patient4DFlow:
 
         # eng.cd("vwerp")
         times, dP, P = eng.get_ste_pressure_estimate_py(
-            f"{self.dir}/{self.ID}_mat_files/{self.ID}_vel.mat",
-            f"{self.dir}/{self.ID}_mat_files/{self.ID}_masks.mat",
+            f"{self.dir}/{self.id}_mat_files/{self.id}_vel.mat",
+            f"{self.dir}/{self.id}_mat_files/{self.id}_masks.mat",
             nargout=3,
         )
 
@@ -211,7 +209,7 @@ class Patient4DFlow:
         if output_dir is not None:
             output_dir = f"{self.dir}/{output_dir}"
         else:
-            output_dir = f"{self.dir}/{self.ID}_STE_vti"
+            output_dir = f"{self.dir}/{self.id}_STE_vti"
 
         # make sure output path exists, create directory if not
         Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -221,39 +219,28 @@ class Patient4DFlow:
 
             # write pressure field one timestep at a time
             p = self.p_STE[:, :, :, t].copy()  # * self.mask
-            out_path = f"{output_dir}/{self.ID}_p_STE_{t:03d}"
+            out_path = f"{output_dir}/{self.id}_p_STE_{t:03d}"
 
             imageToVTK(
                 out_path, spacing=(self.dx / 2).tolist(), cellData={"Pressure": p}
             )
 
     def plot_dp(self):
-        figure = pr.plot_dp(self.times, self.dp_STE, self.ID)
+        figure = pr.plot_dp(self.times, self.dp_STE, self.id)
         # plt.show()
-        figure.savefig(f"{self.ID}_STE_dP.png", dpi=400)
+        figure.savefig(f"{self.id}_STE_dP.png", dpi=400)
 
     def paraview_analysis(self):
         subprocess.run(
             [
                 PVPYTHON_PATH,
                 "../paraview_scripts/paraview_trace.py",
-                self.ID,
+                self.id,
                 self.dir,
                 str(self.mag_data.shape[-1]),
-            ]
+            ],
+            check=False,
         )
-
-
-def um19_check():
-    patient_UM19 = Patient4DFlow(
-        "UM19",
-        "/Users/bkhardy/Dropbox (University of Michigan)/MRI_1.22.24/DICOM/0000A628/AAD75E3C/AA62C567/",
-        "Segmentation.nrrd",
-    )
-
-    patient_UM19.check_orientation()
-    patient_UM19.convert_to_vti()
-    patient_UM19.export_to_mat()
 
 
 def full_run(patient_id, data_path, seg_path):
@@ -267,24 +254,7 @@ def full_run(patient_id, data_path, seg_path):
     patient.plot_dp()
 
 
-def welcome():
-    print("")
-    print("   ___       __    ______                                 _____")
-    print("   __ |     / /_______  /__________________ ________      __  /______")
-    print("   __ | /| / /_  _ \\_  /_  ___/  __ \\_  __ `__ \\  _ \\     _  __/  __ \\")
-    print("   __ |/ |/ / /  __/  / / /__ / /_/ /  / / / / /  __/     / /_ / /_/ /")
-    print("   ____/|__/  \\___//_/  \\___/ \\____//_/ /_/ /_/\\___/      \\__/ \\____/")
-    print("")
-    print("     _____________                    _____            ______")
-    print("     ___  __/__  /________      __    __  /_______________  /_______")
-    print("     __  /_ __  /_  __ \\_ | /| / /    _  __/  __ \\  __ \\_  /__  ___/")
-    print("     _  __/ _  / / /_/ /_ |/ |/ /     / /_ / /_/ / /_/ /  / _(__  )")
-    print("     /_/    /_/  \\____/____/|__/______\\__/ \\____/\\____//_/  /____/")
-    print("                               _/_____/\n")
-
-
 def main():
-    welcome()
     """
     full_run(
         "Carlos",
