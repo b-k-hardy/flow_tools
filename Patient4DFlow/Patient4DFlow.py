@@ -2,7 +2,7 @@ import subprocess
 from pathlib import Path
 
 import matlab.engine
-import matplotlib.pyplot as plt
+import nibabel as nib
 import numpy as np
 import plot_results as pr
 import read_dicoms as rd
@@ -110,9 +110,6 @@ class Patient4DFlow:
 
         # unfortunately it seems like the only solution here is to write a timeframe to disk then load
         # back in. That sucks and is inefficient but whatever.
-
-    # NOTE: I'm currently having a user input the paths directly, but this could definitely get tedious (especially since DICOM paths are evil and not even close to being straightforward/intuitive).
-    # I will definitely want to automate this process but unfortunately, again, DICOMs are evil and I don't know how to parse their metadata completely yet...
 
     def convert_to_vti(self, output_dir: None | str = None) -> None:
 
@@ -225,12 +222,15 @@ class Patient4DFlow:
                 out_path, spacing=(self.dx / 2).tolist(), cellData={"Pressure": p}
             )
 
-    def plot_dp(self):
+    def plot_dp(self) -> None:
+        """Function to plot the pressure drop over time. Exports as a pdf file."""
         figure = pr.plot_dp(self.times, self.dp_STE, self.id)
-        # plt.show()
-        figure.savefig(f"{self.id}_STE_dP.png", dpi=400)
+        figure.savefig(f"{self.id}_STE_dP.pdf")
 
-    def paraview_analysis(self):
+    def paraview_analysis(self) -> None:
+        """Function to run pvparaview script. This script will output a video showing the
+        velocity and pressure fields over time.
+        """
         subprocess.run(
             [
                 PVPYTHON_PATH,
@@ -242,10 +242,24 @@ class Patient4DFlow:
             check=False,
         )
 
+    def export_to_nifti(self):
+
+        self.mask = np.transpose(self.mask, (2, 1, 0))
+        self.flow_data = np.transpose(self.flow_data, (0, 3, 2, 1, 4))
+        self.ssfp_data = np.transpose(self.ssfp_data, (2, 1, 0))
+        self.ssfp_data = np.flip(self.ssfp_data, axis=(1, 2))
+        self.flow_data = np.flip(self.flow_data, axis=0)
+
+        self.convert_to_vti()
+
+        img = nib.Nifti1Image(self.ssfp_data.astype(np.int16).copy(), np.eye(4))
+
+        nib.save(img, "test.nii.gz")
+
 
 def full_run(patient_id, data_path, seg_path):
-    patient = Patient4DFlow(patient_id, data_path, seg_path)
 
+    patient = Patient4DFlow(patient_id, data_path, seg_path)
     patient.add_skeleton()
     patient.convert_to_vti()
     patient.export_to_mat()
@@ -255,13 +269,6 @@ def full_run(patient_id, data_path, seg_path):
 
 
 def main():
-    """
-    full_run(
-        "Carlos",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Carlos 8.4.23/",
-        "Segmentation.nrrd",
-    )
-    """
 
     green = Patient4DFlow(
         "Green",
@@ -271,35 +278,13 @@ def main():
 
     green.convert_to_vti()
 
-    """
     prab = Patient4DFlow(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
         "Segmentation.nrrd",
     )
 
-    prab.mask = np.transpose(prab.mask, (2, 1, 0))
-    prab.flow_data = np.transpose(prab.flow_data, (0, 3, 2, 1, 4))
-    prab.ssfp_data = np.transpose(prab.ssfp_data, (2, 1, 0))
-    prab.ssfp_data = np.flip(prab.ssfp_data, axis=(1, 2))
-    prab.flow_data = np.flip(prab.flow_data, axis=0)
-
-    prab.convert_to_vti()
-
-    img = nib.Nifti1Image(prab.ssfp_data.astype(np.int16).copy(), np.eye(4))
-
-    nib.save(img, "test.nii.gz")
-
     prab.paraview_analysis()
-    """
-
-    """
-    full_run(
-        "Brandon",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Brandon 8.17.23/",
-        "Segmentation.nrrd",
-    )
-    """
 
 
 if __name__ == "__main__":

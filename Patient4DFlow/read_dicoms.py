@@ -1,3 +1,6 @@
+"""Module for reading in DICOM files and converting them to numpy arrays.
+"""
+
 import glob
 import os
 from pathlib import Path
