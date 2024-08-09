@@ -8,3 +8,4 @@
 *.png
 *.nii.gz
 .DS_Store
+*.pdf

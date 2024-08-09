@@ -270,21 +270,11 @@ def full_run(patient_id, data_path, seg_path):
 
 def main():
 
-    green = Patient4DFlow(
-        "Green",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow R01/Green/MRI 4.11.24/",
-        "Segmentation.nrrd",
-    )
-
-    green.convert_to_vti()
-
-    prab = Patient4DFlow(
+    full_run(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
         "Segmentation.nrrd",
     )
-
-    prab.paraview_analysis()
 
 
 if __name__ == "__main__":
