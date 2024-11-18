@@ -1,7 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 from scipy.interpolate import splev, splprep
-from skimage.morphology import skeletonize_3d
+from skimage.morphology import skeletonize
 
 
 # goal is to essentially create a GREEDY traveling salesman...
@@ -105,7 +105,7 @@ def greedy_tsp(cost_matrix: np.ndarray, start_idx: int = 0) -> list:
 
 def smooth_skeletonize(segmentation):
 
-    skel = skeletonize_3d(
+    skel = skeletonize(
         segmentation.astype(np.uint8)
     )  # scikit-image will automatically downcast, but doing it explicitly will save computation time
     points = np.array(np.nonzero(skel)).T

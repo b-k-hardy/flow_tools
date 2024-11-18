@@ -12,7 +12,7 @@ from scipy import ndimage
 from tqdm import tqdm
 
 PA_TO_MMHG = 0.00750061683
-PVPYTHON_PATH = "/Applications/ParaView-5.12.0.app/Contents/bin/pvbatch"
+PVPYTHON_PATH = "/Applications/ParaView-5.13.1.app/Contents/bin/pvbatch"
 
 
 class Patient4DFlow:
@@ -67,7 +67,6 @@ class Patient4DFlow:
     def add_flow(
         self, path_input: str = "user"
     ) -> tuple[np.ndarray, np.ndarray, np.floating]:
-
         if path_input == "user":
             u_path = input("Enter relative path to u data: ")
             v_path = input("Enter relative path to v data: ")
@@ -82,7 +81,6 @@ class Patient4DFlow:
         return flow_data, dx, dt
 
     def add_segmentation(self, path_input):
-
         if path_input == "user":
             seg_path = input("Enter relative path to segmentation: ")
         else:
@@ -97,7 +95,6 @@ class Patient4DFlow:
         return segmentation
 
     def check_orientation(self):
-
         mag = self.mag_data[:, :, :, 6].copy()
 
         u = self.flow_data[0, :, :, :, 6].copy() * self.mask
@@ -112,7 +109,6 @@ class Patient4DFlow:
         # back in. That sucks and is inefficient but whatever.
 
     def convert_to_vti(self, output_dir: None | str = None) -> None:
-
         if output_dir is not None:
             output_dir = f"{self.dir}/{output_dir}"
         else:
@@ -123,7 +119,6 @@ class Patient4DFlow:
 
         print("\nExporting to VTI...")
         for t in tqdm(range(self.flow_data.shape[-1])):
-
             # write velocity field one timestep at a time
             u = self.flow_data[0, :, :, :, t].copy() * self.mask
             v = self.flow_data[1, :, :, :, t].copy() * self.mask
@@ -202,7 +197,6 @@ class Patient4DFlow:
 
     # NOTE: CURRENTLY ASSUMING RESAMPLING FACTOR of 2...
     def export_p_field(self, output_dir: None | str = None) -> None:
-
         if output_dir is not None:
             output_dir = f"{self.dir}/{output_dir}"
         else:
@@ -213,7 +207,6 @@ class Patient4DFlow:
 
         print("\nExporting pressure to VTI...")
         for t in tqdm(range(self.p_STE.shape[-1])):
-
             # write pressure field one timestep at a time
             p = self.p_STE[:, :, :, t].copy()  # * self.mask
             out_path = f"{output_dir}/{self.id}_p_STE_{t:03d}"
@@ -243,7 +236,6 @@ class Patient4DFlow:
         )
 
     def export_to_nifti(self):
-
         self.mask = np.transpose(self.mask, (2, 1, 0))
         self.flow_data = np.transpose(self.flow_data, (0, 3, 2, 1, 4))
         self.ssfp_data = np.transpose(self.ssfp_data, (2, 1, 0))
@@ -258,7 +250,6 @@ class Patient4DFlow:
 
 
 def full_run(patient_id, data_path, seg_path):
-
     patient = Patient4DFlow(patient_id, data_path, seg_path)
     patient.add_skeleton()
     patient.convert_to_vti()
@@ -269,7 +260,6 @@ def full_run(patient_id, data_path, seg_path):
 
 
 def main():
-
     full_run(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
