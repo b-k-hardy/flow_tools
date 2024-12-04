@@ -29,56 +29,19 @@ class Patient4DFlow:
         self.flow_data[0] *= -1
         self.flow_data = self.flow_data.copy()
 
+        # NOTE: currently not following segmentation pattern shown below... inlet/outlet numbers are temp values
         self.segmentation = self.add_segmentation(seg_path)
-        self.mask = (
-            np.array(self.segmentation != 0).astype(np.float64).copy()
-        )  # ALL NON-ZERO VALUES
-
-        self.inlet = (
-            np.array(self.segmentation == 2).astype(np.float64).copy()
-        )  # ALL TWO'S
+        self.mask = np.array(self.segmentation != 0).astype(np.float64).copy()
+        self.inlet = np.array(self.segmentation == 2).astype(np.float64).copy()
         self.inlet = ndimage.binary_dilation(self.inlet) * self.mask
-
-        self.outlet = (
-            np.array(self.segmentation == 3).astype(np.float64).copy()
-        )  # ALL THREE'S
+        self.outlet = np.array(self.segmentation == 3).astype(np.float64).copy()
         self.outlet = ndimage.binary_dilation(self.outlet) * self.mask
 
         # NOTE: TEMPORARY VALUES BEFORE I FIX EVERYTHING
         self.res = np.array(self.mag_data.shape)
 
-        # self.mag_data = self.add_mag(path_input="user")
-        # self.flow_data = self.add_flow(path_input="user")
-        # self.segmentation = self.add_segmentation(path_input="user")
-
     def __str__(self):
         return f"Patient ID: {self.id} @ location {self.dir}"
-
-    def add_mag(self, path_input):
-        if path_input == "user":
-            mag_path = input("Enter relative path to magnitude data: ")
-        else:
-            mag_path = path_input
-
-        mag_data = rd.import_mag(self.dir + mag_path)
-
-        return mag_data
-
-    def add_flow(
-        self, path_input: str = "user"
-    ) -> tuple[np.ndarray, np.ndarray, np.floating]:
-        if path_input == "user":
-            u_path = input("Enter relative path to u data: ")
-            v_path = input("Enter relative path to v data: ")
-            w_path = input("Enter relative path to w data: ")
-        else:
-            u_path, v_path, w_path = path_input
-
-        flow_data, dx, dt = rd.import_flow(
-            (self.dir + u_path, self.dir + v_path, self.dir + w_path)
-        )
-
-        return flow_data, dx, dt
 
     def add_segmentation(self, path_input):
         if path_input == "user":
@@ -162,9 +125,6 @@ class Patient4DFlow:
         )
 
         eng.quit()
-
-        # now call matlab to more easily assemble vWERP/STE/PPE compatible structs
-        # function should not return anything...
 
     # FIXME: Add interactivity! Add plane drawing!!! MAYBE SPLIT THIS UP
     def add_skeleton(self):
@@ -260,11 +220,15 @@ def full_run(patient_id, data_path, seg_path):
 
 
 def main():
-    full_run(
+
+    patient = Patient4DFlow(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
         "Segmentation.nrrd",
     )
+
+    patient.add_skeleton()
+    patient.draw_planes()
 
 
 if __name__ == "__main__":
