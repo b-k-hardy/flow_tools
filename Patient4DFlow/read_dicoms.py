@@ -1,9 +1,7 @@
-"""Module for reading in DICOM files and converting them to numpy arrays.
-"""
+"""Module for reading in DICOM files and converting them to numpy arrays."""
 
 import glob
 import os
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import nrrd
@@ -51,8 +49,6 @@ def import_flow(
         print(f"glob: {paths[i]}")
 
         for fname in tqdm(glob.glob(paths[i], recursive=False)):
-            print_out = "/".join(fname.split("/")[-2:])
-            # print(f"loading: {print_out}", end="\r")
             files.append(pydicom.dcmread(fname))
 
         print(f"\nfile count: {len(files)}")
@@ -103,7 +99,6 @@ def import_flow(
         )  # convert from phase data to velocity data in m/s
 
         if check is not None:
-
             # plot 3 orthogonal slices to check for correct indexing
             a1 = plt.subplot(2, 2, 1)
             plt.imshow(img4d[:, :, img_shape[2] // 2, check], cmap="gray")
@@ -146,8 +141,6 @@ def import_mag(dicom_path: str, check: None | int = None) -> np.ndarray:
     files = []
     print(f"glob: {dicom_path}")
     for fname in tqdm(glob.glob(dicom_path, recursive=False)):
-        print_out = "/".join(fname.split("/")[-2:])
-        # print(f"loading: {print_out}", end="\r")
         files.append(pydicom.dcmread(fname))
 
     print(f"\nfile count: {len(files)}")
@@ -222,8 +215,6 @@ def import_ssfp(dicom_path: str, check: None | int = None) -> np.ndarray:
     files = []
     print(f"glob: {dicom_path}")
     for fname in tqdm(glob.glob(dicom_path, recursive=False)):
-        print_out = "/".join(fname.split("/")[-2:])
-        # print(f"loading: {print_out}", end="\r")
         files.append(pydicom.dcmread(fname))
 
     print(f"\nfile count: {len(files)}")
@@ -299,7 +290,6 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
         "**/", root_dir=dir_path, recursive=True
     )  # there might be a cleaner way to do this recursively, but for now this is okay -- or maybe I good use os module instead?
     for dir_name in dir_list:
-
         print(f"Checking {dir_name}")
 
         try:
@@ -350,23 +340,19 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
             w_venc = int(wip[-5:-2])
         else:
             mag_path = dir_name + "*"
+
     for item in ssfp_list:
         dir_name = item["dir"]
         ssfp_path = dir_name + "*"
 
-    flow_paths = (dir_path + u_path, dir_path + v_path, dir_path + w_path)
-    vencs = (u_venc, v_venc, w_venc)
+    try:
+        flow_paths = (dir_path + u_path, dir_path + v_path, dir_path + w_path)
+        vencs = (u_venc, v_venc, w_venc)
+    except UnboundLocalError:
+        print("Missing 4D flow phase data!")
 
     mag_data = import_mag(dir_path + mag_path)
     ssfp_data = import_ssfp(dir_path + ssfp_path)
     flow_data, dx, dt = import_flow(flow_paths, vencs)
 
     return mag_data, ssfp_data, flow_data, dx, dt
-
-
-def main():
-    print("This isn't a script, but feel free to debug/run tests here!")
-
-
-if __name__ == "__main__":
-    main()

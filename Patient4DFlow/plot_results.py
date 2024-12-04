@@ -98,11 +98,3 @@ def plot_seg_skeleton(
     )
 
     fig.show()
-
-
-def main():
-    print("This isn't a script, but feel free to debug/run tests here!")
-
-
-if __name__ == "__main__":
-    main()

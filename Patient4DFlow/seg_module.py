@@ -220,11 +220,3 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
     # fig.layout.zaxis.scaleanchor = "x"
 
     fig.show()
-
-
-def main():
-    print("This isn't a script, but feel free to debug/run tests here!")
-
-
-if __name__ == "__main__":
-    main()
