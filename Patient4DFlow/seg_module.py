@@ -33,7 +33,6 @@ def find_planes(points: np.ndarray, normals: np.ndarray) -> np.ndarray:
 
     u = np.linspace(50, 100, 50)  # FUCK IT ACTUALLY HAS TO BE A MESH GRID SITUATION
     v = np.linspace(0, 50, 50)
-
     uv, vv = np.meshgrid(u, v)
 
     plane = (
@@ -44,7 +43,6 @@ def find_planes(points: np.ndarray, normals: np.ndarray) -> np.ndarray:
 
     r = np.linspace(0.1, 5, 4, endpoint=True)
     theta = np.linspace(0, 2 * np.pi, 20)
-
     rv, thetav = np.meshgrid(r, theta)
 
     plane2 = (
