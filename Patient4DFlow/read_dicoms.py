@@ -74,19 +74,19 @@ def import_flow(
         sag_aspect = ps[1] / ss
         cor_aspect = ss / ps[0]
         max_slice = max(slices, key=lambda s: s.AcquisitionNumber)
-        Nt = int(max_slice.AcquisitionNumber)
+        nt = int(max_slice.AcquisitionNumber)
 
         # create 4D array
         img_shape = list(slices[0].pixel_array.shape)
-        Nz = int(len(slices) / Nt)
-        img_shape.append(Nz)
-        img4d = np.zeros((img_shape[0], img_shape[1], Nz, Nt))
+        nz = int(len(slices) / nt)
+        img_shape.append(nz)
+        img4d = np.zeros((img_shape[0], img_shape[1], nz, nt))
 
         # NOTE I'M REPEATING INDICES WTF DUDE DUH THE ORDERING IS WRONG
-        for t in range(Nt):
-            timestep = slices[Nz * t : Nz * (t + 1)]
+        for t in range(nt):
+            timestep = slices[nz * t : nz * (t + 1)]
             timestep.sort(key=lambda s: s.SliceLocation)
-            for j in range(Nz):
+            for j in range(nz):
                 img_step = timestep[j]
                 img2d = (
                     img_step.pixel_array * img_step.RescaleSlope
@@ -94,9 +94,8 @@ def import_flow(
                 )
                 img4d[:, :, j, t] = img2d
 
-        img4d = (
-            img4d / phase_range * vencs[i] / 100
-        )  # convert from phase data to velocity data in m/s
+        # convert from phase data to velocity data in m/s
+        img4d = img4d / phase_range * vencs[i] / 100
 
         if check is not None:
             # plot 3 orthogonal slices to check for correct indexing
@@ -166,19 +165,19 @@ def import_mag(dicom_path: str, check: None | int = None) -> np.ndarray:
     sag_aspect = ps[1] / ss
     cor_aspect = ss / ps[0]
     max_slice = max(slices, key=lambda s: s.AcquisitionNumber)
-    Nt = int(max_slice.AcquisitionNumber)
+    nt = int(max_slice.AcquisitionNumber)
 
     # create 3D array
     img_shape = list(slices[0].pixel_array.shape)
-    Nz = int(len(slices) / Nt)
-    img_shape.append(Nz)
-    img4d = np.zeros((img_shape[0], img_shape[1], Nz, Nt))
+    nz = int(len(slices) / nt)
+    img_shape.append(nz)
+    img4d = np.zeros((img_shape[0], img_shape[1], nz, nt))
 
     # fill 3D array with the images from the files
-    for i in range(Nt):
-        timestep = slices[Nz * i : Nz * (i + 1)]
+    for i in range(nt):
+        timestep = slices[nz * i : nz * (i + 1)]
         timestep.sort(key=lambda s: s.SliceLocation)
-        for j in range(Nz):
+        for j in range(nz):
             img2d = timestep[j].pixel_array
             img4d[:, :, j, i] = img2d
 
@@ -239,16 +238,15 @@ def import_ssfp(dicom_path: str, check: None | int = None) -> np.ndarray:
     ax_aspect = ps[1] / ps[0]
     sag_aspect = ps[1] / ss
     cor_aspect = ss / ps[0]
-    max_slice = max(slices, key=lambda s: s.AcquisitionNumber)
 
     # create 3D array
     img_shape = list(slices[0].pixel_array.shape)
-    Nz = int(len(slices))
-    img_shape.append(Nz)
-    img4d = np.zeros((img_shape[0], img_shape[1], Nz))
+    nz = int(len(slices))
+    img_shape.append(nz)
+    img4d = np.zeros((img_shape[0], img_shape[1], nz))
 
     # fill 3D array with the images from the files
-    for i in range(Nz):
+    for i in range(nz):
         img2d = slices[i].pixel_array
         img4d[:, :, i] = img2d
 
@@ -281,14 +279,13 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
         tuple[np.ndarray, np.ndarray]: magnitude data, flow data
     """
 
-    phase_encoding_IDs = ["ap", "rl", "fh", "in"]
     wip_list = []
     ssfp_list = []
 
     # 1. Find all DICOM directories
     dir_list = glob.glob(
         "**/", root_dir=dir_path, recursive=True
-    )  # there might be a cleaner way to do this recursively, but for now this is okay -- or maybe I good use os module instead?
+    )  # there might be a cleaner way to do this recursively? Without all the try except
     for dir_name in dir_list:
         print(f"Checking {dir_name}")
 
@@ -316,42 +313,40 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
             and hasattr(check_file, "SequenceName")
             and int(check_file.SliceThickness) != 0
         ):
-            wip = (
-                check_file.SequenceName
-            )  # FIXME: why was this gone? How did appending a fake wip ever work even once??
+            wip = check_file.SequenceName
             series = check_file.SeriesNumber
             ssfp_list.append({"wip": wip, "series_num": int(series), "dir": dir_name})
-            print("Found SSFP!")  # NOTE WHAT IS HAPPENING
+            print("Found SSFP!")
 
     wip_list.sort(key=lambda w: w["series_num"])
     wip_list = wip_list[-4:]
+
+    # stupid ass initialization so linter doesn't freak out
+    vencs = np.zeros(3)
+    flow_paths = [""] * 3
+    mag_path = ""
+
     for item in wip_list:
         dir_name = item["dir"]
         wip = item["wip"]
 
-        if wip[-2:] == "in":
-            u_path = dir_name + "*"
-            u_venc = int(wip[-5:-2])
+        if wip[-2:] == "in":  # or rl?
+            flow_paths[0] = dir_path + dir_name + "*"
+            vencs[0] = int(wip[-5:-2])
         elif wip[-2:] == "ap":
-            v_path = dir_name + "*"
-            v_venc = int(wip[-5:-2])
+            flow_paths[1] = dir_path + dir_name + "*"
+            vencs[1] = int(wip[-5:-2])
         elif wip[-2:] == "fh":
-            w_path = dir_name + "*"
-            w_venc = int(wip[-5:-2])
+            flow_paths[2] = dir_path + dir_name + "*"
+            vencs[2] = int(wip[-5:-2])
         else:
-            mag_path = dir_name + "*"
+            mag_path = dir_path + dir_name + "*"
 
     for item in ssfp_list:
         dir_name = item["dir"]
         ssfp_path = dir_name + "*"
 
-    try:
-        flow_paths = (dir_path + u_path, dir_path + v_path, dir_path + w_path)
-        vencs = (u_venc, v_venc, w_venc)
-    except UnboundLocalError:
-        print("Missing 4D flow phase data!")
-
-    mag_data = import_mag(dir_path + mag_path)
+    mag_data = import_mag(mag_path)
     ssfp_data = import_ssfp(dir_path + ssfp_path)
     flow_data, dx, dt = import_flow(flow_paths, vencs)
 
