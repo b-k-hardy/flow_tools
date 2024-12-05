@@ -41,27 +41,7 @@ def find_planes(points: np.ndarray, normals: np.ndarray) -> np.ndarray:
         + np.outer(vv, np.array([param_2, 0.0, 1.0]))
     )
 
-    r = np.linspace(0.1, 5, 4, endpoint=True)
-    theta = np.linspace(0, 2 * np.pi, 20)
-    rv, thetav = np.meshgrid(r, theta)
-
-    plane2 = (
-        (
-            np.sqrt(normals[2] ** 2 + normals[1] ** 2) * np.outer(rv, np.sin(thetav))
-            + points[0]
-        ),
-        (
-            np.sqrt(normals[2] ** 2 + normals[0] ** 2) * np.outer(rv, np.cos(thetav))
-            + points[1]
-        ),
-        (
-            -normals[0] * np.outer(rv, np.sin(thetav))
-            - normals[1] * np.outer(rv, np.cos(thetav))
-            + points[2]
-        ),
-    )
-
-    return plane2
+    return plane
 
 
 # NOTE: this code has a few weird redundant steps that I can clean up later...
@@ -164,17 +144,16 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
         )
 
         fig.add_trace(
-            go.Surface(
+            go.Scatter3d(
                 visible=False,
-                x=plane[0],
-                y=plane[1],
-                z=plane[2],
-                showscale=False,
-                # marker=dict(
-                #    size=4,
-                #    colorscale="Viridis",
-                # ),
-                # line=dict(color="blue", width=2),
+                x=plane[:, 0],
+                y=plane[:, 1],
+                z=plane[:, 2],
+                marker=dict(
+                    size=4,
+                    colorscale="Viridis",
+                ),
+                line=dict(color="blue", width=2),
             )
         )
 
