@@ -17,7 +17,10 @@ PVPYTHON_PATH = "/Applications/ParaView-5.13.1.app/Contents/bin/pvbatch"
 
 class Patient4DFlow:
     def __init__(
-        self, patient_id: str, data_directory: str, seg_path: str = "user"
+        self,
+        patient_id: str,
+        data_directory: str,
+        seg_path: str = "user",
     ) -> None:
         self.id = patient_id
         self.data_directory = data_directory
@@ -31,7 +34,7 @@ class Patient4DFlow:
 
         # NOTE: currently not following segmentation pattern shown below... inlet/outlet numbers are temp values
         self.segmentation, self.seg_origin, self.seg_spacing = self.add_segmentation(
-            seg_path
+            seg_path,
         )
         self.mask = np.array(self.segmentation != 0).astype(np.float64).copy()
         self.inlet = np.array(self.segmentation == 2).astype(np.float64).copy()
@@ -52,7 +55,7 @@ class Patient4DFlow:
             seg_path = path_input
 
         segmentation, origin, spacing = rd.import_segmentation(
-            self.data_directory + seg_path
+            self.data_directory + seg_path,
         )
 
         # PROBABLY GOING TO BE TEMPORARY CODE AS I WORK THINGS OUT
@@ -175,7 +178,9 @@ class Patient4DFlow:
 
             # NOTE: CURRENTLY ASSUMING RESAMPLING FACTOR of 2...
             imageToVTK(
-                out_path, spacing=(self.dx / 2).tolist(), cellData={"Pressure": p}
+                out_path,
+                spacing=(self.dx / 2).tolist(),
+                cellData={"Pressure": p},
             )
 
     def plot_dp(self) -> None:
