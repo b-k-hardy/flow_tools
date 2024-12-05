@@ -19,7 +19,13 @@ def import_segmentation(seg_path: str) -> np.ndarray:
     Returns:
         np.ndarray: _description_
     """
-    return nrrd.read(seg_path)[0]
+    seg_data = nrrd.read(seg_path)
+    segmentation = seg_data[0]
+    header = seg_data[1]
+    origin = np.array(header["space origin"])
+    spacing = np.array(header["space directions"])
+
+    return segmentation, origin, spacing
 
 
 # FIXME: pass in base directory so glob paths aren't so annoying...

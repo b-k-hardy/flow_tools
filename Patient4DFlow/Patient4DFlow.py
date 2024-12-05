@@ -30,7 +30,7 @@ class Patient4DFlow:
         self.flow_data = self.flow_data.copy()
 
         # NOTE: currently not following segmentation pattern shown below... inlet/outlet numbers are temp values
-        self.segmentation = self.add_segmentation(seg_path)
+        self.segmentation, self.origin, self.spacing = self.add_segmentation(seg_path)
         self.mask = np.array(self.segmentation != 0).astype(np.float64).copy()
         self.inlet = np.array(self.segmentation == 2).astype(np.float64).copy()
         self.inlet = ndimage.binary_dilation(self.inlet) * self.mask
@@ -49,13 +49,15 @@ class Patient4DFlow:
         else:
             seg_path = path_input
 
-        segmentation = rd.import_segmentation(self.data_directory + seg_path)
+        segmentation, origin, spacing = rd.import_segmentation(
+            self.data_directory + seg_path
+        )
 
         # PROBABLY GOING TO BE TEMPORARY CODE AS I WORK THINGS OUT
         segmentation = np.transpose(segmentation, (1, 0, 2))
         segmentation = np.flip(segmentation, axis=2)
 
-        return segmentation
+        return segmentation, origin, spacing
 
     def check_orientation(self):
         mag = self.mag_data[:, :, :, 6].copy()

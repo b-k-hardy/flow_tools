@@ -31,7 +31,7 @@ def find_planes(points: np.ndarray, normals: np.ndarray) -> np.ndarray:
     param_1 = -normals[1] / normals[0]
     param_2 = -normals[2] / normals[0]
 
-    u = np.linspace(50, 100, 50)  # FUCK IT ACTUALLY HAS TO BE A MESH GRID SITUATION
+    u = np.linspace(50, 100, 50)
     v = np.linspace(0, 50, 50)
     uv, vv = np.meshgrid(u, v)
 
