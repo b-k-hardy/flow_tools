@@ -72,7 +72,8 @@ def greedy_tsp(cost_matrix: np.ndarray, start_idx: int = 0) -> list:
     whichever adjacent point is the closest.
 
     Args:
-        cost_matrix (np.ndarray): 2D array/matrix that stores the cost (generally some measure of distance) of moving from one point to another.
+        cost_matrix (np.ndarray): 2D array/matrix that stores the cost (generally some measure of distance)
+        of moving from one point to another.
         start_idx (int, optional): Index of the point to start with. Defaults to 0.
 
     Returns:
@@ -103,9 +104,8 @@ def greedy_tsp(cost_matrix: np.ndarray, start_idx: int = 0) -> list:
 
 def smooth_skeletonize(segmentation):
 
-    skel = skeletonize(
-        segmentation.astype(np.uint8)
-    )  # scikit-image will automatically downcast, but doing it explicitly will save computation time
+    # scikit-image will automatically downcast, but doing it explicitly will save computation time
+    skel = skeletonize(segmentation.astype(np.uint8))
     points = np.array(np.nonzero(skel)).T
 
     distance_matrix = create_distance_matrix(points)
@@ -113,7 +113,7 @@ def smooth_skeletonize(segmentation):
     best_path = greedy_tsp(distance_matrix, start)
     points = points[best_path]
 
-    tck, u = splprep([points[:, 0], points[:, 1], points[:, 2]])
+    tck, u, _, _ = splprep([points[:, 0], points[:, 1], points[:, 2]])
     new_points = splev(u, tck)
     first_deriv = splev(u, tck, der=1)
 
