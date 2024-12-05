@@ -113,7 +113,7 @@ def smooth_skeletonize(segmentation):
     best_path = greedy_tsp(distance_matrix, start)
     points = points[best_path]
 
-    tck, u, _, _ = splprep([points[:, 0], points[:, 1], points[:, 2]])
+    tck, u = splprep([points[:, 0], points[:, 1], points[:, 2]])
     new_points = splev(u, tck)
     first_deriv = splev(u, tck, der=1)
 
