@@ -3,13 +3,13 @@ import numpy as np
 import plotly.graph_objects as go
 
 
-def plot_dp(time: np.ndarray, dp: np.ndarray, id: str) -> plt.Figure:
+def plot_dp(time: np.ndarray, dp: np.ndarray, patient_id: str) -> plt.Figure:
     """_summary_
 
     Args:
         time (np.ndarray): Pressure estimation timepoints
         dp (np.ndarray): Estimated relative pressure curve
-        id (str): Name of input dataset
+        patient_id (str): Name of input dataset
 
     Returns:
         plt.Figure: Pressure trace between two planes over cardiac cycle
@@ -18,8 +18,8 @@ def plot_dp(time: np.ndarray, dp: np.ndarray, id: str) -> plt.Figure:
     fig, ax = plt.subplots()
 
     ax.set_xlabel("Time [s]")
-    ax.set_ylabel("$\Delta$p [mmHg]")
-    ax.set_title(f"{id} Pressure Drop")
+    ax.set_ylabel(r"$\Delta$p [mmHg]")
+    ax.set_title(f"{patient_id} Pressure Drop")
 
     ax.grid()
     fig.tight_layout()
