@@ -23,6 +23,7 @@ def find_planes(points: np.ndarray, normals: np.ndarray) -> np.ndarray:
 
     Returns:
         np.ndarray: _description_
+
     """
     normals = normals / np.linalg.norm(normals)
     d = np.dot(normals, points)
@@ -58,8 +59,8 @@ def greedy_tsp(cost_matrix: np.ndarray, start_idx: int = 0) -> list:
 
     Returns:
         list: Returns the path with the lowest cost.
-    """
 
+    """
     path = []
     path.append(start_idx)
     N = cost_matrix.shape[0]
@@ -83,7 +84,6 @@ def greedy_tsp(cost_matrix: np.ndarray, start_idx: int = 0) -> list:
 
 
 def smooth_skeletonize(segmentation):
-
     # scikit-image will automatically downcast, but doing it explicitly will save computation time
     skel = skeletonize(segmentation.astype(np.uint8))
     points = np.array(np.nonzero(skel)).T
@@ -101,7 +101,6 @@ def smooth_skeletonize(segmentation):
 
 
 def plane_drawer(segmentation, spline_points, spline_deriv):
-
     xv = np.arange(0, segmentation.shape[0], 1)
     yv = np.arange(0, segmentation.shape[1], 1)
     zv = np.arange(0, segmentation.shape[2], 1)
@@ -121,7 +120,7 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
             opacity=0.1,  # needs to be small to see through all surfaces
             surface_count=1,  # needs to be a large number for good volume rendering
             showscale=False,
-        )
+        ),
     )
 
     fig.add_trace(
@@ -134,14 +133,39 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
                 colorscale="Viridis",
             ),
             line=dict(color="red", width=2),
-        )
+        ),
     )
 
     for i in range(len(spline_points[0])):
+        center_point = np.array(
+            [spline_points[0][i], spline_points[1][i], spline_points[2][i]],
+        )
+
         plane = find_planes(
             np.array([spline_points[0][i], spline_points[1][i], spline_points[2][i]]),
             np.array([spline_deriv[0][i], spline_deriv[1][i], spline_deriv[2][i]]),
         )
+
+        plane_vol_idx = np.round(plane).astype(int)
+        plane_vol = np.zeros(segmentation.shape)
+        plane_vol_idx = plane_vol_idx[plane_vol_idx.min(axis=1) >= 0, :]
+        plane_vol_idx = plane_vol_idx[plane_vol_idx.max(axis=1) < 160, :]
+
+        # remove points that are far from center point
+        plane_vol_idx = plane_vol_idx[
+            np.linalg.norm(plane_vol_idx - center_point, axis=1) < 10,
+            :,
+        ]
+
+        # somehow loop through all values but exclude anything that is negative... THEN count and loop again
+        for j in range(len(plane_vol_idx)):
+            plane_vol[plane_vol_idx[j, 0], plane_vol_idx[j, 1], plane_vol_idx[j, 2]] = 1
+
+        plane_vol = plane_vol * segmentation
+
+        # inverse to scatter for better plotting
+        plane_vol_idx = np.nonzero(plane_vol)
+        plane = np.array(plane_vol_idx).T
 
         fig.add_trace(
             go.Scatter3d(
@@ -154,7 +178,7 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
                     colorscale="Viridis",
                 ),
                 line=dict(color="blue", width=2),
-            )
+            ),
         )
 
     # Make 12th trace visible
@@ -179,10 +203,10 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
     sliders = [
         dict(
             active=10,
-            currentvalue={"prefix": "Frequency: "},
+            currentvalue={"prefix": "Plane: "},
             pad={"t": 50},
             steps=steps,
-        )
+        ),
     ]
     fig.update_layout(
         scene=dict(
