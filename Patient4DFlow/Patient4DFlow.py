@@ -30,7 +30,9 @@ class Patient4DFlow:
         self.flow_data = self.flow_data.copy()
 
         # NOTE: currently not following segmentation pattern shown below... inlet/outlet numbers are temp values
-        self.segmentation, self.origin, self.spacing = self.add_segmentation(seg_path)
+        self.segmentation, self.seg_origin, self.seg_spacing = self.add_segmentation(
+            seg_path
+        )
         self.mask = np.array(self.segmentation != 0).astype(np.float64).copy()
         self.inlet = np.array(self.segmentation == 2).astype(np.float64).copy()
         self.inlet = ndimage.binary_dilation(self.inlet) * self.mask
@@ -221,7 +223,6 @@ def full_run(patient_id, data_path, seg_path):
 
 
 def main():
-
     patient = Patient4DFlow(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
