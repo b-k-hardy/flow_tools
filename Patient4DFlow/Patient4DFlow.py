@@ -20,9 +20,9 @@ class Patient4DFlow:
         self, patient_id: str, data_directory: str, seg_path: str = "user"
     ) -> None:
         self.id = patient_id
-        self.dir = data_directory
+        self.data_directory = data_directory
         self.mag_data, self.ssfp_data, self.flow_data, self.dx, self.dt = (
-            rd.import_all_dicoms(self.dir)
+            rd.import_all_dicoms(self.data_directory)
         )
 
         self.flow_data = np.flip(self.flow_data, axis=0)
@@ -41,7 +41,7 @@ class Patient4DFlow:
         self.res = np.array(self.mag_data.shape)
 
     def __str__(self):
-        return f"Patient ID: {self.id} @ location {self.dir}"
+        return f"Patient ID: {self.id} @ location {self.data_directory}"
 
     def add_segmentation(self, path_input):
         if path_input == "user":
@@ -49,7 +49,7 @@ class Patient4DFlow:
         else:
             seg_path = path_input
 
-        segmentation = rd.import_segmentation(self.dir + seg_path)
+        segmentation = rd.import_segmentation(self.data_directory + seg_path)
 
         # PROBABLY GOING TO BE TEMPORARY CODE AS I WORK THINGS OUT
         segmentation = np.transpose(segmentation, (1, 0, 2))
@@ -73,9 +73,9 @@ class Patient4DFlow:
 
     def convert_to_vti(self, output_dir: None | str = None) -> None:
         if output_dir is not None:
-            output_dir = f"{self.dir}/{output_dir}"
+            output_dir = f"{self.data_directory}/{output_dir}"
         else:
-            output_dir = f"{self.dir}/{self.id}_flow_vti"
+            output_dir = f"{self.data_directory}/{self.id}_flow_vti"
 
         # make sure output path exists, create directory if not
         Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -96,9 +96,9 @@ class Patient4DFlow:
         eng = matlab.engine.start_matlab()
 
         if output_dir is not None:
-            output_dir = f"{self.dir}/{output_dir}"
+            output_dir = f"{self.data_directory}/{output_dir}"
         else:
-            output_dir = f"{self.dir}/{self.id}_mat_files"
+            output_dir = f"{self.data_directory}/{self.id}_mat_files"
 
         # make sure output path exists, create directory if not
         Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -128,13 +128,13 @@ class Patient4DFlow:
 
     # FIXME: Add interactivity! Add plane drawing!!! MAYBE SPLIT THIS UP
     def add_skeleton(self):
-        skel_image, skel_rough, self.skeleton, self.skeleton_derivative = (
+        skel_image, skel_rough, self.skeleton, self.skeleton_ddx = (
             sm.smooth_skeletonize(self.segmentation)
-        )  # FEEDING IN SEGMENTATION INSTEAD... WEIRD? NOTE: feeding in the full segmentation (with data range from 1 to 3) works better when visualizing... weird.
-        # pr.plot_seg_skeleton(self.segmentation, skel_image, skel_rough, self.skeleton)
+        )
+        pr.plot_seg_skeleton(self.segmentation, skel_image, skel_rough, self.skeleton)
 
     def draw_planes(self):
-        sm.plane_drawer(self.segmentation, self.skeleton, self.skeleton_derivative)
+        sm.plane_drawer(self.segmentation, self.skeleton, self.skeleton_ddx)
 
     def get_ste_drop(self):
         """_summary_"""
@@ -142,25 +142,23 @@ class Patient4DFlow:
 
         eng.addpath(eng.genpath("../vwerp"))
 
-        # eng.cd("vwerp")
-        times, dP, P = eng.get_ste_pressure_estimate_py(
-            f"{self.dir}/{self.id}_mat_files/{self.id}_vel.mat",
-            f"{self.dir}/{self.id}_mat_files/{self.id}_masks.mat",
+        times, dp_drop, dp_field = eng.get_ste_pressure_estimate_py(
+            f"{self.data_directory}/{self.id}_mat_files/{self.id}_vel.mat",
+            f"{self.data_directory}/{self.id}_mat_files/{self.id}_masks.mat",
             nargout=3,
         )
 
         eng.quit()
 
         self.times = np.array(times).flatten()
-        self.dp_STE = np.array(dP).flatten() * PA_TO_MMHG
-        self.p_STE = np.array(P) * PA_TO_MMHG
+        self.dp_STE = np.array(dp_drop).flatten() * PA_TO_MMHG
+        self.p_STE = np.array(dp_field) * PA_TO_MMHG
 
-    # NOTE: CURRENTLY ASSUMING RESAMPLING FACTOR of 2...
     def export_p_field(self, output_dir: None | str = None) -> None:
         if output_dir is not None:
-            output_dir = f"{self.dir}/{output_dir}"
+            output_dir = f"{self.data_directory}/{output_dir}"
         else:
-            output_dir = f"{self.dir}/{self.id}_STE_vti"
+            output_dir = f"{self.data_directory}/{self.id}_STE_vti"
 
         # make sure output path exists, create directory if not
         Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -171,6 +169,7 @@ class Patient4DFlow:
             p = self.p_STE[:, :, :, t].copy()  # * self.mask
             out_path = f"{output_dir}/{self.id}_p_STE_{t:03d}"
 
+            # NOTE: CURRENTLY ASSUMING RESAMPLING FACTOR of 2...
             imageToVTK(
                 out_path, spacing=(self.dx / 2).tolist(), cellData={"Pressure": p}
             )
@@ -189,7 +188,7 @@ class Patient4DFlow:
                 PVPYTHON_PATH,
                 "../paraview_scripts/paraview_trace.py",
                 self.id,
-                self.dir,
+                self.data_directory,
                 str(self.mag_data.shape[-1]),
             ],
             check=False,
