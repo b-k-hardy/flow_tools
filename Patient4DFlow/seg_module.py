@@ -11,27 +11,60 @@ def create_distance_matrix(points):
     return np.sqrt(((points[:, :, None] - points[:, :, None].T) ** 2).sum(axis=1))
 
 
+def gen_orthogonal_vectors(v: np.ndarray) -> tuple:
+    """Calculate a vector orthogonal to the given vector v.
+
+    Args:
+        v (np.ndarray): Input vector
+
+    Returns:
+        tuple: Orthogonal vectors to form local basis
+
+    """
+    # Choose a second vector that is not parallel to v
+    second_vector = np.array([0, 1, 0]) if np.all(v == [1, 0, 0]) else np.array([1, 0, 0])
+
+    # Calculate the cross product
+    orthogonal_vec = np.cross(v, second_vector)
+
+    # Normalize the orthogonal vector
+    orthogonal_vec = orthogonal_vec / np.linalg.norm(orthogonal_vec)
+
+    orthogonal_vec2 = np.cross(orthogonal_vec, v)
+
+    # Normalize the orthogonal vector
+    orthogonal_vec2 = orthogonal_vec2 / np.linalg.norm(orthogonal_vec2)
+
+    return orthogonal_vec, orthogonal_vec2
+
+
 # VECTORIZE AND FIND ALL??
 # Could also attempt to defind some kind of polar coordinate system along centerline???
 # trouble is that I'll have to then transform to cartesian coordinates...
-def find_planes(points: np.ndarray, normals: np.ndarray) -> np.ndarray:
-    """_summary_
+def find_planes(point: np.ndarray, normal: np.ndarray) -> np.ndarray:
+    """Generate a plane based on a point and its normal vector.
 
     Args:
-        points (np.ndarray): _description_
-        normals (np.ndarray): _description_
+        points (np.ndarray): position vector of the plane center
+        normals (np.ndarray): normal vector of the plane
 
     Returns:
         np.ndarray: _description_
 
     """
-    normals = normals / np.linalg.norm(normals)
-    d = np.dot(normals, points)
+    # ensure that normal vector is actually normalized
+    normal = normal / np.linalg.norm(normal)
+    # need to pick some vector (there are infinite possibilities)
+    # then find the cross product of the normal and this vector to get a second vector
 
-    const = d / normals[0]
-    param_1 = -normals[1] / normals[0]
-    param_2 = -normals[2] / normals[0]
+    d = np.dot(normal, point)
 
+    const = d / normal[0]
+    param_1 = -normal[1] / normal[0]
+    param_2 = -normal[2] / normal[0]
+
+    # NOTE: herein lies the issue... u and v are fixed and not dependent on the position vector.
+    # Plane should "radiate out" from center point a la the polar example
     u = np.linspace(50, 100, 50)
     v = np.linspace(0, 50, 50)
     uv, vv = np.meshgrid(u, v)
@@ -83,7 +116,7 @@ def greedy_tsp(cost_matrix: np.ndarray, start_idx: int = 0) -> list:
     return path
 
 
-def smooth_skeletonize(segmentation):
+def smooth_skeletonize(segmentation: np.ndarray) -> tuple:
     # scikit-image will automatically downcast, but doing it explicitly will save computation time
     skel = skeletonize(segmentation.astype(np.uint8))
     points = np.array(np.nonzero(skel)).T
@@ -128,11 +161,11 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
             x=spline_points[0],
             y=spline_points[1],
             z=spline_points[2],
-            marker=dict(
-                size=4,
-                colorscale="Viridis",
-            ),
-            line=dict(color="red", width=2),
+            marker={
+                "size": 4,
+                "colorscale": "Viridis",
+            },
+            line={"color": "red", "width": 2},
         ),
     )
 

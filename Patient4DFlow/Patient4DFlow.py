@@ -22,11 +22,11 @@ class Patient4DFlow:
         data_directory: str,
         seg_path: str = "user",
     ) -> None:
+        inlet_value = 2
+        outlet_value = 3
         self.id = patient_id
         self.data_directory = data_directory
-        self.mag_data, self.ssfp_data, self.flow_data, self.dx, self.dt = (
-            rd.import_all_dicoms(self.data_directory)
-        )
+        self.mag_data, self.ssfp_data, self.flow_data, self.dx, self.dt = rd.import_all_dicoms(self.data_directory)
 
         self.flow_data = np.flip(self.flow_data, axis=0)
         self.flow_data[0] *= -1
@@ -37,22 +37,19 @@ class Patient4DFlow:
             seg_path,
         )
         self.mask = np.array(self.segmentation != 0).astype(np.float64).copy()
-        self.inlet = np.array(self.segmentation == 2).astype(np.float64).copy()
+        self.inlet = np.array(self.segmentation == inlet_value).astype(np.float64).copy()
         self.inlet = ndimage.binary_dilation(self.inlet) * self.mask
-        self.outlet = np.array(self.segmentation == 3).astype(np.float64).copy()
+        self.outlet = np.array(self.segmentation == outlet_value).astype(np.float64).copy()
         self.outlet = ndimage.binary_dilation(self.outlet) * self.mask
 
         # NOTE: TEMPORARY VALUES BEFORE I FIX EVERYTHING
         self.res = np.array(self.mag_data.shape)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Patient ID: {self.id} @ location {self.data_directory}"
 
-    def add_segmentation(self, path_input):
-        if path_input == "user":
-            seg_path = input("Enter relative path to segmentation: ")
-        else:
-            seg_path = path_input
+    def add_segmentation(self, path_input: str):
+        seg_path = input("Enter relative path to segmentation: ") if path_input == "user" else path_input
 
         segmentation, origin, spacing = rd.import_segmentation(
             self.data_directory + seg_path,
@@ -64,7 +61,7 @@ class Patient4DFlow:
 
         return segmentation, origin, spacing
 
-    def check_orientation(self):
+    def check_orientation(self) -> None:
         mag = self.mag_data[:, :, :, 6].copy()
 
         u = self.flow_data[0, :, :, :, 6].copy() * self.mask
@@ -134,16 +131,14 @@ class Patient4DFlow:
         eng.quit()
 
     # FIXME: Add interactivity! Add plane drawing!!! MAYBE SPLIT THIS UP
-    def add_skeleton(self):
-        skel_image, skel_rough, self.skeleton, self.skeleton_ddx = (
-            sm.smooth_skeletonize(self.segmentation)
-        )
+    def add_skeleton(self) -> None:
+        skel_image, skel_rough, self.skeleton, self.skeleton_ddx = sm.smooth_skeletonize(self.segmentation)
         pr.plot_seg_skeleton(self.segmentation, skel_image, skel_rough, self.skeleton)
 
-    def draw_planes(self):
+    def draw_planes(self) -> None:
         sm.plane_drawer(self.segmentation, self.skeleton, self.skeleton_ddx)
 
-    def get_ste_drop(self):
+    def get_ste_drop(self) -> None:
         """_summary_"""
         eng = matlab.engine.start_matlab()
 
@@ -203,7 +198,7 @@ class Patient4DFlow:
             check=False,
         )
 
-    def export_to_nifti(self):
+    def export_to_nifti(self) -> None:
         self.mask = np.transpose(self.mask, (2, 1, 0))
         self.flow_data = np.transpose(self.flow_data, (0, 3, 2, 1, 4))
         self.ssfp_data = np.transpose(self.ssfp_data, (2, 1, 0))
