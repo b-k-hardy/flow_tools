@@ -54,28 +54,13 @@ def find_planes(point: np.ndarray, normal: np.ndarray) -> np.ndarray:
     """
     # ensure that normal vector is actually normalized
     normal = normal / np.linalg.norm(normal)
-    # need to pick some vector (there are infinite possibilities)
-    # then find the cross product of the normal and this vector to get a second vector
+    u, v = gen_orthogonal_vectors(normal)
 
-    d = np.dot(normal, point)
+    u = np.outer(np.linspace(-15, 15, 50), u) + point
+    v = np.outer(np.linspace(-15, 15, 50), v) + point
+    # uv, vv = np.meshgrid(u, v, indexing="ij")
 
-    const = d / normal[0]
-    param_1 = -normal[1] / normal[0]
-    param_2 = -normal[2] / normal[0]
-
-    # NOTE: herein lies the issue... u and v are fixed and not dependent on the position vector.
-    # Plane should "radiate out" from center point a la the polar example
-    u = np.linspace(50, 100, 50)
-    v = np.linspace(0, 50, 50)
-    uv, vv = np.meshgrid(u, v)
-
-    plane = (
-        np.array([const, 0.0, 0.0])
-        + np.outer(uv, np.array([param_1, 1.0, 0.0]))
-        + np.outer(vv, np.array([param_2, 0.0, 1.0]))
-    )
-
-    return plane
+    return np.concatenate((u, v), axis=0)
 
 
 # NOTE: this code has a few weird redundant steps that I can clean up later...
@@ -179,26 +164,26 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
             np.array([spline_deriv[0][i], spline_deriv[1][i], spline_deriv[2][i]]),
         )
 
-        plane_vol_idx = np.round(plane).astype(int)
-        plane_vol = np.zeros(segmentation.shape)
-        plane_vol_idx = plane_vol_idx[plane_vol_idx.min(axis=1) >= 0, :]
-        plane_vol_idx = plane_vol_idx[plane_vol_idx.max(axis=1) < 160, :]
+        # plane_vol_idx = np.round(plane).astype(int)
+        # plane_vol = np.zeros(segmentation.shape)
+        # plane_vol_idx = plane_vol_idx[plane_vol_idx.min(axis=1) >= 0, :]
+        # plane_vol_idx = plane_vol_idx[plane_vol_idx.max(axis=1) < 160, :]
 
         # remove points that are far from center point
-        plane_vol_idx = plane_vol_idx[
-            np.linalg.norm(plane_vol_idx - center_point, axis=1) < 10,
-            :,
-        ]
+        # plane_vol_idx = plane_vol_idx[
+        #    np.linalg.norm(plane_vol_idx - center_point, axis=1) < 10,
+        #    :,
+        # ]
 
         # somehow loop through all values but exclude anything that is negative... THEN count and loop again
-        for j in range(len(plane_vol_idx)):
-            plane_vol[plane_vol_idx[j, 0], plane_vol_idx[j, 1], plane_vol_idx[j, 2]] = 1
+        # for j in range(len(plane_vol_idx)):
+        #    plane_vol[plane_vol_idx[j, 0], plane_vol_idx[j, 1], plane_vol_idx[j, 2]] = 1
 
-        plane_vol = plane_vol * segmentation
+        # plane_vol = plane_vol * segmentation
 
         # inverse to scatter for better plotting
-        plane_vol_idx = np.nonzero(plane_vol)
-        plane = np.array(plane_vol_idx).T
+        # plane_vol_idx = np.nonzero(plane_vol)
+        # plane = np.array(plane_vol_idx).T
 
         fig.add_trace(
             go.Scatter3d(
