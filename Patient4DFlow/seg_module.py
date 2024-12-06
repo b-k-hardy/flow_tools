@@ -62,7 +62,7 @@ def find_planes(point: np.ndarray, normal: np.ndarray) -> np.ndarray:
 
     u_grid = np.zeros((50 * 50, 3))
     for i in range(50):
-        u_grid[i * 50 : (i + 1) * 50, :] = u_full + v * (i / 2 - 25)
+        u_grid[i * 50 : (i + 1) * 50, :] = u_full + v * (i - 25) / 2
 
     return u_grid + point
 
@@ -168,26 +168,22 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
             np.array([spline_deriv[0][i], spline_deriv[1][i], spline_deriv[2][i]]),
         )
 
-        # plane_vol_idx = np.round(plane).astype(int)
-        # plane_vol = np.zeros(segmentation.shape)
-        # plane_vol_idx = plane_vol_idx[plane_vol_idx.min(axis=1) >= 0, :]
-        # plane_vol_idx = plane_vol_idx[plane_vol_idx.max(axis=1) < 160, :]
+        plane_vol_idx = np.round(plane).astype(int)
+        plane_vol = np.zeros(segmentation.shape)
 
-        # remove points that are far from center point
-        # plane_vol_idx = plane_vol_idx[
-        #    np.linalg.norm(plane_vol_idx - center_point, axis=1) < 10,
-        #    :,
-        # ]
+        plane_vol_idx = plane_vol_idx[
+            np.linalg.norm(plane_vol_idx - center_point, axis=1) < 10,
+            :,
+        ]
 
-        # somehow loop through all values but exclude anything that is negative... THEN count and loop again
-        # for j in range(len(plane_vol_idx)):
-        #    plane_vol[plane_vol_idx[j, 0], plane_vol_idx[j, 1], plane_vol_idx[j, 2]] = 1
+        for j in range(len(plane_vol_idx)):
+            plane_vol[plane_vol_idx[j, 0], plane_vol_idx[j, 1], plane_vol_idx[j, 2]] = 1
 
-        # plane_vol = plane_vol * segmentation
+        plane_vol = plane_vol * segmentation
 
         # inverse to scatter for better plotting
-        # plane_vol_idx = np.nonzero(plane_vol)
-        # plane = np.array(plane_vol_idx).T
+        plane_vol_idx = np.nonzero(plane_vol)
+        plane = np.array(plane_vol_idx).T
 
         fig.add_trace(
             go.Scatter3d(
