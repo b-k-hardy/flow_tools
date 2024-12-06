@@ -56,11 +56,15 @@ def find_planes(point: np.ndarray, normal: np.ndarray) -> np.ndarray:
     normal = normal / np.linalg.norm(normal)
     u, v = gen_orthogonal_vectors(normal)
 
-    u = np.outer(np.linspace(-15, 15, 50), u) + point
-    v = np.outer(np.linspace(-15, 15, 50), v) + point
+    u_full = np.outer(np.linspace(-15, 15, 50), u)
+    v_full = np.outer(np.linspace(-15, 15, 50), v)
     # uv, vv = np.meshgrid(u, v, indexing="ij")
 
-    return np.concatenate((u, v), axis=0)
+    u_grid = np.zeros((50 * 50, 3))
+    for i in range(50):
+        u_grid[i * 50 : (i + 1) * 50, :] = u_full + v * (i / 2 - 25)
+
+    return u_grid + point
 
 
 # NOTE: this code has a few weird redundant steps that I can clean up later...
@@ -191,11 +195,7 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
                 x=plane[:, 0],
                 y=plane[:, 1],
                 z=plane[:, 2],
-                marker=dict(
-                    size=4,
-                    colorscale="Viridis",
-                ),
-                line=dict(color="blue", width=2),
+                marker={"size": 4, "color": "blue"},
             ),
         )
 
