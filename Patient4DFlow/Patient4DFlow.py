@@ -86,6 +86,11 @@ class Patient4DFlow:
         return segmentation, origin, spacing
 
     def check_orientation(self) -> None:
+        """Quick check to make sure 4D flow data is oriented correctly after import.
+
+        Data from one timeframe is exported to VTK format for visualization in ParaView.
+        The goal would be to check for any orientation issues in the data, including vector direction.
+        """
         mag = self.mag_data[:, :, :, 6].copy()
 
         u = self.flow_data[0, :, :, :, 6].copy() * self.mask
@@ -264,6 +269,24 @@ class Patient4DFlow:
 
 
 def full_run(patient_id: str, data_path: str, seg_path: str) -> None:
+    """Run full analysis pipeline for a single patient.
+
+    This function can be imported directly into the driver code to run the full analysis pipeline. Additionally, this
+    function can be used as inspiration to show how the sub-functions are generally ordered. Of note:
+    1. The first step is always to initialize the Patient4DFlow object.
+    2. For any analysis, a skeleton will need to be added
+    3. Exporting the velocity data to VTK format is a common step, but not required
+    4. Exporting the data to .mat MATLAB format is required for the STE pressure drop estimation
+    5. The STE pressure drop estimation is a key part of the analysis and required for the remaining steps
+    6. Exporting the pressure field to VTK format is optional, but can be useful for visualization
+    7. Plotting the pressure drop over time is a key part of the analysis
+
+    Args:
+        patient_id (str): Anonymized patient ID
+        data_path (str): Absolute path to patient data directory
+        seg_path (str): Relative path from data_path to segmentation file
+
+    """
     patient = Patient4DFlow(patient_id, data_path, seg_path)
     patient.add_skeleton()
     patient.export_vel_to_vti()

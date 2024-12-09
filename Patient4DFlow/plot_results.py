@@ -30,7 +30,6 @@ def plot_dp(time: np.ndarray, dp: np.ndarray, patient_id: str) -> plt.Figure:
     return fig
 
 
-# TODO(Brandon): Could work on making sure these different array have similar format (n_points x 3) for easier plotting
 def plot_seg_skeleton(
     segmentation: np.ndarray,
     skeleton: np.ndarray,
