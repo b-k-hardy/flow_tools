@@ -44,6 +44,7 @@ def gen_orthogonal_vectors(normal: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 # NOTE: might be able to vectorize this process to find every plane at once. Will avoid slow python for loop
+# Additional vectorization will first be necessary to make this function more efficient (for loop in line 67)
 def find_planes(point: np.ndarray, normal: np.ndarray) -> np.ndarray:
     """Generate a plane based on a point and its normal vector.
 
@@ -61,13 +62,54 @@ def find_planes(point: np.ndarray, normal: np.ndarray) -> np.ndarray:
 
     u_full = np.outer(np.linspace(-15, 15, 50), u)
     v_full = np.outer(np.linspace(-15, 15, 50), v)
-    # uv, vv = np.meshgrid(u, v, indexing="ij")
 
     u_grid = np.zeros((50 * 50, 3))
     for i in range(50):
-        u_grid[i * 50 : (i + 1) * 50, :] = u_full + v * (i - 25) / 2
+        u_grid[i * 50 : (i + 1) * 50, :] = u_full + v_full[i, :]
 
     return u_grid + point
+
+
+def generate_plane_volume(
+    plane: np.ndarray,
+    segmentation: np.ndarray,
+    center_point: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Take 3D plane and return the indices of the plane within the segmentation.
+
+    In addition to returning the image indices of the plane, this function removes any points that are not
+    contained within the total segmentation. There is also a hard-coded maximum plane radius to prevent a single
+    plane from cutting through the descending and ascending aorta simultaneously.
+
+    Args:
+        plane (np.ndarray): n_points x 3 array of points in the plane
+        segmentation (np.ndarray): Binary image of the segmentation
+        center_point (np.ndarray): Point on centerline where plane is generated. This serves as the center of the plane.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: 3D coords of plane for plotting and the plane mask for pressure calculations
+
+    """
+    # convert to integer indices
+    plane_vol_idx = np.round(plane).astype(int)
+    plane_vol = np.zeros(segmentation.shape)
+
+    # remove far away points
+    plane_vol_idx = plane_vol_idx[
+        np.linalg.norm(plane_vol_idx - center_point, axis=1) < MAX_PLANE_SIZE,
+        :,
+    ]
+
+    # fill in the plane mask
+    for j in range(len(plane_vol_idx)):
+        plane_vol[plane_vol_idx[j, 0], plane_vol_idx[j, 1], plane_vol_idx[j, 2]] = 1
+
+    # intersection of segmentation mask and plane mask
+    plane_vol = plane_vol * segmentation
+
+    plane_vol_idx = np.nonzero(plane_vol)
+
+    return np.array(plane_vol_idx).T, plane_vol
 
 
 # NOTE: this code has a few weird redundant steps that I can clean up later...
@@ -140,12 +182,29 @@ def plane_drawer(
     spline_points: np.ndarray,
     spline_deriv: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
+    """Generate planes and plot them with the segmentation and spline.
+
+    TODO(Brandon): Ultimate goal is to make this function even more interactive.
+    A user should be able to drag the slider to select an inlet and outlet plane.
+    Currently, as a proof of concept, the function simply takes the 8th and 8th last
+    planes as inlet/outlet.
+
+    Args:
+        segmentation (np.ndarray): Binary image of segmentation mask
+        spline_points (np.ndarray): Points that make up the spline
+        spline_deriv (np.ndarray): Gradient of the spline. Necessary for plane generation.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: outlet plane mask and inlet plane mask, respectively
+
+    """
+    # set up grid for plotting
     xv = np.arange(0, segmentation.shape[0], 1)
     yv = np.arange(0, segmentation.shape[1], 1)
     zv = np.arange(0, segmentation.shape[2], 1)
-
     x_grid, y_grid, z_grid = np.meshgrid(xv, yv, zv, indexing="ij")
 
+    # initialize figure
     fig = go.Figure()
 
     # add segmentation as volume rendering
@@ -177,8 +236,8 @@ def plane_drawer(
         ),
     )
 
-    planes = []
     # add planes
+    planes = []
     for i in range(spline_points.shape[0]):
         center_point = np.array(
             [spline_points[i, 0], spline_points[i, 1], spline_points[i, 2]],
@@ -189,24 +248,8 @@ def plane_drawer(
             np.array([spline_deriv[i, 0], spline_deriv[i, 1], spline_deriv[i, 2]]),
         )
 
-        plane_vol_idx = np.round(plane).astype(int)
-        plane_vol = np.zeros(segmentation.shape)
-
-        plane_vol_idx = plane_vol_idx[
-            np.linalg.norm(plane_vol_idx - center_point, axis=1) < MAX_PLANE_SIZE,
-            :,
-        ]
-
-        for j in range(len(plane_vol_idx)):
-            plane_vol[plane_vol_idx[j, 0], plane_vol_idx[j, 1], plane_vol_idx[j, 2]] = 1
-
-        plane_vol = plane_vol * segmentation
-
-        planes.append(plane_vol)
-
-        # inverse to scatter for better plotting
-        plane_vol_idx = np.nonzero(plane_vol)
-        plane = np.array(plane_vol_idx).T
+        plane, plane_seg = generate_plane_volume(plane, segmentation, center_point)
+        planes.append(plane_seg)
 
         fig.add_trace(
             go.Scatter3d(
@@ -256,4 +299,4 @@ def plane_drawer(
 
     fig.show()
 
-    return planes[8], planes[-8]  # outlet, inlet
+    return planes[8], planes[-8]
