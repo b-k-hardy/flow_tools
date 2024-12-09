@@ -110,7 +110,7 @@ def greedy_tsp(cost_matrix: np.ndarray, start_idx: int = 0) -> list:
     return path
 
 
-def smooth_skeletonize(segmentation: np.ndarray) -> tuple:
+def smooth_skeletonize(segmentation: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Convert a binary segmentation to an array of smoothed skeleton points.
 
     Args:
@@ -132,10 +132,9 @@ def smooth_skeletonize(segmentation: np.ndarray) -> tuple:
     new_points = splev(u, tck)
     first_deriv = splev(u, tck, der=1)
 
-    return skel, points, np.asarray(new_points).T, first_deriv
+    return skel, points, np.asarray(new_points).T, np.asarray(first_deriv).T
 
 
-# TODO(Brandon): These type annotations are incorrect currently, but definitely what I want in the end... fix this.
 def plane_drawer(
     segmentation: np.ndarray,
     spline_points: np.ndarray,
@@ -187,7 +186,7 @@ def plane_drawer(
 
         plane = find_planes(
             np.array([spline_points[i, 0], spline_points[i, 1], spline_points[i, 2]]),
-            np.array([spline_deriv[0][i], spline_deriv[1][i], spline_deriv[2][i]]),
+            np.array([spline_deriv[i, 0], spline_deriv[i, 1], spline_deriv[i, 2]]),
         )
 
         plane_vol_idx = np.round(plane).astype(int)
