@@ -3,8 +3,7 @@
 import logging
 import sys
 
-import patient4Dflow
-import patient4Dflow.patient4Dflow
+import patient4Dflow.patient_class
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     """Run and log analysis of 4D flow data."""
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-    patient = patient4Dflow.patient4Dflow.Patient4DFlow(
+    patient = patient4Dflow.patient_class.Patient4DFlow(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
         "Segmentation.nrrd",
