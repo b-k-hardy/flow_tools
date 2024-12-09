@@ -8,7 +8,7 @@ import nibabel as nib
 import numpy as np
 import plot_results as pr
 import read_dicoms as rd
-import seg_module as sm  # init seems to have fixed these paths??? very interesting...
+import seg_module as sm
 from pyevtk.hl import imageToVTK
 from scipy import ndimage
 from tqdm import tqdm

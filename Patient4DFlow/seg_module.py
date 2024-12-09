@@ -1,18 +1,32 @@
+"""Module for segmentation of MRI data."""
+
 import numpy as np
 import plotly.graph_objects as go
 from scipy.interpolate import splev, splprep
 from skimage.morphology import skeletonize
 
+MAX_PLANE_SIZE = 10
 
-# goal is to essentially create a GREEDY traveling salesman...
-# absolutely no idea what this nonsense is.
-# might consider just fitting a line directly to the data... locally-weighted regression? Not sure...
-def create_distance_matrix(points):
+
+def create_distance_matrix(points: np.ndarray) -> np.ndarray:
+    """Create a distance matrix between all points in 3D space.
+
+    Args:
+        points (np.ndarray): location of points in 3D space
+
+    Returns:
+        np.ndarray: L2 norm distance matrix between all points
+
+    """
     return np.sqrt(((points[:, :, None] - points[:, :, None].T) ** 2).sum(axis=1))
 
 
 def gen_orthogonal_vectors(v: np.ndarray) -> tuple:
-    """Calculate a vector orthogonal to the given vector v.
+    """Calculate two vectors orthogonal to the given vector v.
+
+    This function is used to generate two orthogonal vectors to a given input vector. The generated
+    vectors are normalized and are used to form a local basis based on the input vector. That is,
+    the resulting vectors form an orthonormal basis.
 
     Args:
         v (np.ndarray): Input vector
@@ -24,23 +38,16 @@ def gen_orthogonal_vectors(v: np.ndarray) -> tuple:
     # Choose a second vector that is not parallel to v
     second_vector = np.array([0, 1, 0]) if np.all(v == [1, 0, 0]) else np.array([1, 0, 0])
 
-    # Calculate the cross product
     orthogonal_vec = np.cross(v, second_vector)
-
-    # Normalize the orthogonal vector
     orthogonal_vec = orthogonal_vec / np.linalg.norm(orthogonal_vec)
 
     orthogonal_vec2 = np.cross(orthogonal_vec, v)
-
-    # Normalize the orthogonal vector
     orthogonal_vec2 = orthogonal_vec2 / np.linalg.norm(orthogonal_vec2)
 
     return orthogonal_vec, orthogonal_vec2
 
 
-# VECTORIZE AND FIND ALL??
-# Could also attempt to defind some kind of polar coordinate system along centerline???
-# trouble is that I'll have to then transform to cartesian coordinates...
+# NOTE: might be able to vectorize this process to find every plane at once. Will avoid slow python for loop
 def find_planes(point: np.ndarray, normal: np.ndarray) -> np.ndarray:
     """Generate a plane based on a point and its normal vector.
 
@@ -52,7 +59,7 @@ def find_planes(point: np.ndarray, normal: np.ndarray) -> np.ndarray:
         np.ndarray: _description_
 
     """
-    # ensure that normal vector is actually normalized
+    # ensure that plane normal is actually normalized
     normal = normal / np.linalg.norm(normal)
     u, v = gen_orthogonal_vectors(normal)
 
@@ -87,12 +94,12 @@ def greedy_tsp(cost_matrix: np.ndarray, start_idx: int = 0) -> list:
     """
     path = []
     path.append(start_idx)
-    N = cost_matrix.shape[0]
+    num_points = cost_matrix.shape[0]
 
-    for i in range(N):
+    for i in range(num_points):
         cost_matrix[i, i] = np.nan
 
-    valid_idx = set(np.arange(N))
+    valid_idx = set(np.arange(num_points))
     valid_idx.remove(start_idx)
     cost_matrix[:, start_idx] = np.nan
 
@@ -124,29 +131,31 @@ def smooth_skeletonize(segmentation: np.ndarray) -> tuple:
     return skel, points, new_points, first_deriv
 
 
-def plane_drawer(segmentation, spline_points, spline_deriv):
+def plane_drawer(segmentation: np.ndarray, spline_points, spline_deriv) -> tuple[np.ndarray, np.ndarray]:
     xv = np.arange(0, segmentation.shape[0], 1)
     yv = np.arange(0, segmentation.shape[1], 1)
     zv = np.arange(0, segmentation.shape[2], 1)
 
-    X, Y, Z = np.meshgrid(xv, yv, zv, indexing="ij")
+    x_grid, y_grid, z_grid = np.meshgrid(xv, yv, zv, indexing="ij")
 
     fig = go.Figure()
 
+    # add segmentation as volume rendering
     fig.add_trace(
         go.Volume(
-            x=X.flatten(),
-            y=Y.flatten(),
-            z=Z.flatten(),
+            x=x_grid.flatten(),
+            y=y_grid.flatten(),
+            z=z_grid.flatten(),
             value=segmentation.flatten(),
             isomin=0.9,
             isomax=1.0,
-            opacity=0.1,  # needs to be small to see through all surfaces
-            surface_count=1,  # needs to be a large number for good volume rendering
+            opacity=0.1,
+            surface_count=1,
             showscale=False,
         ),
     )
 
+    # add spline as scatter plot
     fig.add_trace(
         go.Scatter3d(
             x=spline_points[0],
@@ -160,6 +169,7 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
         ),
     )
 
+    # add planes
     for i in range(len(spline_points[0])):
         center_point = np.array(
             [spline_points[0][i], spline_points[1][i], spline_points[2][i]],
@@ -174,7 +184,7 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
         plane_vol = np.zeros(segmentation.shape)
 
         plane_vol_idx = plane_vol_idx[
-            np.linalg.norm(plane_vol_idx - center_point, axis=1) < 10,
+            np.linalg.norm(plane_vol_idx - center_point, axis=1) < MAX_PLANE_SIZE,
             :,
         ]
 
@@ -203,17 +213,16 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
     # Create and add slider
     steps = []
     for i in range(len(fig.data)):
-        step = dict(
-            method="update",
-            args=[
+        step = {
+            "method": "update",
+            "args": [
                 {"visible": [False] * len(fig.data)},  # NOTE: THIS ISDEFINITELY WRONG
                 {"title": "Slider switched to plane: " + str(i)},
             ],  # layout attribute
-        )
+        }
 
-        # step["args"][0]["visible"][0] = True  # Toggle i'th trace to "visible"
-        step["args"][0]["visible"][1] = True  # Toggle i'th trace to "visible"
-        step["args"][0]["visible"][i] = True  # Toggle i'th trace to "visible"
+        step["args"][0]["visible"][1] = True
+        step["args"][0]["visible"][i] = True
         steps.append(step)
 
     sliders = [
