@@ -254,9 +254,6 @@ def plane_drawer(
         yaxis_fixedrange=True,
     )
 
-    # fig.layout.yaxis.scaleanchor = "x"
-    # fig.layout.zaxis.scaleanchor = "x"
-
     fig.show()
 
     return planes[8], planes[-8]  # outlet, inlet

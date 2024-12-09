@@ -33,7 +33,7 @@ def import_segmentation(seg_path: str) -> tuple[np.ndarray, np.ndarray, np.ndarr
     return segmentation, origin, spacing
 
 
-# FIXME: pass in base directory so glob paths aren't so annoying...
+# TODO(Brandon): pass in base directory so glob paths aren't so annoying...
 def import_flow(
     paths: tuple[str, str, str],
     vencs: tuple[int, int, int],

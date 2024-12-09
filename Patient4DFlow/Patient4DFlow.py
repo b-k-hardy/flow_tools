@@ -1,3 +1,5 @@
+"""Module that definds the Patient4DFlow class."""
+
 from __future__ import annotations
 
 import logging
@@ -22,12 +24,26 @@ logger = logging.getLogger(__name__)
 
 
 class Patient4DFlow:
+    """Class to store and analyze 4D flow MRI data for a single patient.
+
+    Specialized helper functions are contained in additional modules of the patient4Dflow library.
+    """
+
     def __init__(
         self,
         patient_id: str,
         data_directory: str,
         seg_path: str = "user",
     ) -> None:
+        """Initialize Patient4DFlow object.
+
+        Args:
+            patient_id (str): Anonymized patient ID.
+            data_directory (str): Absolute path to patient data directory.
+            seg_path (str, optional): Name of segmentation or relative path to segmentation from data directory.
+            Defaults to "user" to prompt user for input.
+
+        """
         self.id = patient_id
         self.data_directory = data_directory
         self.mag_data, self.ssfp_data, self.flow_data, self.dx, self.dt = rd.import_all_dicoms(self.data_directory)
@@ -150,12 +166,13 @@ class Patient4DFlow:
 
         eng.quit()
 
-    # FIXME: Add interactivity! Add plane drawing!!! MAYBE SPLIT THIS UP
     def add_skeleton(self) -> None:
+        """Create a skeleton from the segmentation and plot it."""
         skel_image, skel_rough, self.skeleton, self.skeleton_ddx = sm.smooth_skeletonize(self.segmentation)
         pr.plot_seg_skeleton(self.segmentation, skel_image, skel_rough, self.skeleton)
 
     def draw_planes(self) -> None:
+        """Call plane drawing tool and add inlet/outlet masks."""
         self.outlet, self.inlet = sm.plane_drawer(self.segmentation, self.skeleton, self.skeleton_ddx)
         self.inlet = ndimage.binary_dilation(self.inlet) * self.mask
         self.outlet = ndimage.binary_dilation(self.outlet) * self.mask
@@ -168,7 +185,7 @@ class Patient4DFlow:
         """
         eng = matlab.engine.start_matlab()
 
-        eng.addpath(eng.genpath("../vwerp"))
+        eng.addpath(eng.genpath("vwerp"))  # NOTE: this is not an ideal solution for the path, but good band-aid
 
         times, dp_drop, dp_field = eng.get_ste_pressure_estimate_py(
             f"{self.data_directory}/{self.id}_mat_files/{self.id}_vel.mat",
@@ -232,6 +249,7 @@ class Patient4DFlow:
         )
 
     def export_to_nifti(self) -> None:
+        """Export SSFP image to Nifti format for testing segmentation U-Net."""
         self.mask = np.transpose(self.mask, (2, 1, 0))
         self.flow_data = np.transpose(self.flow_data, (0, 3, 2, 1, 4))
         self.ssfp_data = np.transpose(self.ssfp_data, (2, 1, 0))
