@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import nrrd
 import numpy as np
 import pydicom
-from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +61,7 @@ def import_flow(
 
         files = [pydicom.dcmread(fname) for fname in Path(paths[i]).glob("*")]
 
-        print(f"file count: {len(files)}\n")
+        logger.info("file count: %d\n", len(files))
 
         # skip files with no SliceLocation (eg scout views)
         slices = []
@@ -148,11 +147,11 @@ def import_mag(dicom_path: str, check: None | int = None) -> np.ndarray:
     """
     # load the DICOM files
     files = []
-    print(f"glob: {dicom_path}")
-    for fname in tqdm(glob.glob(dicom_path, recursive=False)):
-        files.append(pydicom.dcmread(fname))
+    logger.info("globbing %s", dicom_path)
 
-    print(f"\nfile count: {len(files)}")
+    files = [pydicom.dcmread(fname) for fname in Path(dicom_path).glob("*")]
+
+    logger.info("file count: %d\n", len(files))
 
     # skip files with no SliceLocation (eg scout views)
     slices = []
@@ -224,11 +223,11 @@ def import_ssfp(dicom_path: str, check: None | int = None) -> np.ndarray:
     """
     # load the DICOM files
     files = []
-    print(f"glob: {dicom_path}")
-    for fname in tqdm(glob.glob(dicom_path, recursive=False)):
-        files.append(pydicom.dcmread(fname))
+    logger.info("globbing %s", dicom_path)
 
-    print(f"\nfile count: {len(files)}")
+    files = [pydicom.dcmread(fname) for fname in Path(dicom_path).glob("*")]
+
+    logger.info("file count: %d\n", len(files))
 
     # skip files with no SliceLocation (eg scout views)
     slices = []
@@ -356,11 +355,11 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
             flow_paths[2] = dir_path + dir_name
             vencs[2] = int(wip[-5:-2])
         else:
-            mag_path = dir_path + dir_name + "*"
+            mag_path = dir_path + dir_name
 
     for item in ssfp_list:
         dir_name = item["dir"]
-        ssfp_path = dir_name + "*"
+        ssfp_path = dir_name
 
     mag_data = import_mag(mag_path)
     ssfp_data = import_ssfp(dir_path + ssfp_path)
