@@ -83,7 +83,7 @@ class Patient4DFlow:
         # unfortunately it seems like the only solution here is to write a timeframe to disk then load
         # back in. That sucks and is inefficient but whatever.
 
-    def convert_to_vti(self, output_dir: None | str = None) -> None:
+    def export_vel_to_vti(self, output_dir: None | str = None) -> None:
         """Export flow velocity data to VTK ImageData format.
 
         Args:
@@ -111,6 +111,12 @@ class Patient4DFlow:
             imageToVTK(out_path, spacing=self.dx.tolist(), cellData={"Velocity": vel})
 
     def export_to_mat(self, output_dir: None | str = None) -> None:
+        """Export flow velocity struct and mask data to MATLAB .mat files.
+
+        Args:
+            output_dir (None | str, optional): Path to mat output directory. Defaults to None to autogenerate directory.
+
+        """
         eng = matlab.engine.start_matlab()
 
         if output_dir is not None:
@@ -155,7 +161,11 @@ class Patient4DFlow:
         self.outlet = ndimage.binary_dilation(self.outlet) * self.mask
 
     def get_ste_drop(self) -> None:
-        """_summary_"""
+        """Use matlabengine to call STE MATLAB function and estimate a pressure drop.
+
+        It is significantly more reliable to load the .mat data in the MATLAB function than to pass it as an argument
+        in this function. Make sure to export the data to .mat files with export_to_mat() before running this function.
+        """
         eng = matlab.engine.start_matlab()
 
         eng.addpath(eng.genpath("../vwerp"))
@@ -172,7 +182,13 @@ class Patient4DFlow:
         self.dp_STE = np.array(dp_drop).flatten() * PA_TO_MMHG
         self.p_STE = np.array(dp_field) * PA_TO_MMHG
 
-    def export_p_field(self, output_dir: None | str = None) -> None:
+    def export_p_field_to_vti(self, output_dir: None | str = None) -> None:
+        """Export pressure field to VTK ImageData format.
+
+        Args:
+            output_dir (None | str, optional): Path to vti output directory. Defaults to None to autogenerate directory.
+
+        """
         if output_dir is not None:
             output_dir = f"{self.data_directory}/{output_dir}"
         else:
@@ -229,10 +245,10 @@ class Patient4DFlow:
         nib.save(img, "test.nii.gz")
 
 
-def full_run(patient_id, data_path, seg_path):
+def full_run(patient_id: str, data_path: str, seg_path: str) -> None:
     patient = Patient4DFlow(patient_id, data_path, seg_path)
     patient.add_skeleton()
-    patient.convert_to_vti()
+    patient.export_vel_to_vti()
     patient.export_to_mat()
     patient.get_ste_drop()
     patient.export_p_field()
@@ -251,7 +267,7 @@ def main():
     patient.draw_planes()
     patient.export_to_mat()
     patient.get_ste_drop()
-    patient.export_p_field()
+    patient.export_p_field_to_vti()
     patient.plot_dp()
 
 

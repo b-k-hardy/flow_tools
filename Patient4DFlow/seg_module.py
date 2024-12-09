@@ -21,30 +21,26 @@ def create_distance_matrix(points: np.ndarray) -> np.ndarray:
     return np.sqrt(((points[:, :, None] - points[:, :, None].T) ** 2).sum(axis=1))
 
 
-def gen_orthogonal_vectors(v: np.ndarray) -> tuple:
-    """Calculate two vectors orthogonal to the given vector v.
-
-    This function is used to generate two orthogonal vectors to a given input vector. The generated
-    vectors are normalized and are used to form a local basis based on the input vector. That is,
-    the resulting vectors form an orthonormal basis.
+def gen_orthogonal_vectors(normal: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Generate two orthogonal vectors to the given normal vector.
 
     Args:
-        v (np.ndarray): Input vector
+        normal (np.ndarray): Normal vector to the plane.
 
     Returns:
-        tuple: Orthogonal vectors to form local basis
+        tuple[np.ndarray, np.ndarray]: Two orthogonal vectors.
 
     """
-    # Choose a second vector that is not parallel to v
-    second_vector = np.array([0, 1, 0]) if np.all(v == [1, 0, 0]) else np.array([1, 0, 0])
+    # Generate a vector that is not parallel to the normal
+    not_parallel = np.array([0, 1, 0]) if np.allclose(normal, [1, 0, 0]) else np.array([1, 0, 0])
 
-    orthogonal_vec = np.cross(v, second_vector)
-    orthogonal_vec = orthogonal_vec / np.linalg.norm(orthogonal_vec)
+    # Use the cross product to find two orthogonal vectors
+    u = np.cross(normal, not_parallel)
+    u /= np.linalg.norm(u)
+    v = np.cross(normal, u)
+    v /= np.linalg.norm(v)
 
-    orthogonal_vec2 = np.cross(orthogonal_vec, v)
-    orthogonal_vec2 = orthogonal_vec2 / np.linalg.norm(orthogonal_vec2)
-
-    return orthogonal_vec, orthogonal_vec2
+    return u, v
 
 
 # NOTE: might be able to vectorize this process to find every plane at once. Will avoid slow python for loop
@@ -52,15 +48,15 @@ def find_planes(point: np.ndarray, normal: np.ndarray) -> np.ndarray:
     """Generate a plane based on a point and its normal vector.
 
     Args:
-        points (np.ndarray): position vector of the plane center
-        normals (np.ndarray): normal vector of the plane
+        point (np.ndarray): Position vector of the plane center.
+        normal (np.ndarray): Normal vector of the plane.
 
     Returns:
-        np.ndarray: _description_
+        np.ndarray: Array of points in the plane.
 
     """
     # ensure that plane normal is actually normalized
-    normal = normal / np.linalg.norm(normal)
+    normal /= np.linalg.norm(normal)
     u, v = gen_orthogonal_vectors(normal)
 
     u_full = np.outer(np.linspace(-15, 15, 50), u)
@@ -139,7 +135,11 @@ def smooth_skeletonize(segmentation: np.ndarray) -> tuple:
     return skel, points, new_points, first_deriv
 
 
-def plane_drawer(segmentation: np.ndarray, spline_points, spline_deriv) -> tuple[np.ndarray, np.ndarray]:
+def plane_drawer(
+    segmentation: np.ndarray,
+    spline_points: np.ndarray,
+    spline_deriv: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
     xv = np.arange(0, segmentation.shape[0], 1)
     yv = np.arange(0, segmentation.shape[1], 1)
     zv = np.arange(0, segmentation.shape[2], 1)
@@ -227,11 +227,12 @@ def plane_drawer(segmentation: np.ndarray, spline_points, spline_deriv) -> tuple
         step = {
             "method": "update",
             "args": [
-                {"visible": [False] * len(fig.data)},  # NOTE: THIS ISDEFINITELY WRONG
+                {"visible": [False] * len(fig.data)},  # make every trace invisible first
                 {"title": "Slider switched to plane: " + str(i)},
-            ],  # layout attribute
+            ],
         }
 
+        # Make the i-th trace visible and ensure that skeleton is always visible
         step["args"][0]["visible"][1] = True
         step["args"][0]["visible"][i] = True
         steps.append(step)
@@ -258,4 +259,4 @@ def plane_drawer(segmentation: np.ndarray, spline_points, spline_deriv) -> tuple
 
     fig.show()
 
-    return planes[5], planes[-5]  # outlet, inlet
+    return planes[8], planes[-8]  # outlet, inlet
