@@ -241,7 +241,6 @@ def full_run(patient_id, data_path, seg_path):
 
 def main():
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-    logger.info("Started")
     patient = Patient4DFlow(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
@@ -254,7 +253,6 @@ def main():
     patient.get_ste_drop()
     patient.export_p_field()
     patient.plot_dp()
-    logger.info("Finished")
 
 
 if __name__ == "__main__":

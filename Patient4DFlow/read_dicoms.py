@@ -295,13 +295,14 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
     ssfp_list = []
 
     # 1. Find all DICOM directories
+    # there might be a cleaner way to do this recursively? Without all the try except
     dir_list = glob.glob(
         "**/",
         root_dir=dir_path,
         recursive=True,
-    )  # there might be a cleaner way to do this recursively? Without all the try except
+    )
     for dir_name in dir_list:
-        print(f"Checking {dir_name}")
+        logger.info("Checking %s", dir_name)
 
         try:
             fname = os.listdir(dir_path + dir_name)[0]
@@ -313,7 +314,8 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
         except IsADirectoryError:
             continue
 
-        # I NEED TO CHECK FOR SSFP IN SERIES DESCRIPTION AND THEN IF SSFP IS FOUND I WILL CHECK FOR SLICE THICKNESS TO GRAB ACTUAL DATA
+        # I NEED TO CHECK FOR SSFP IN SERIES DESCRIPTION AND THEN IF SSFP IS FOUND I WILL CHECK
+        # FOR SLICE THICKNESS TO GRAB ACTUAL DATA... huh
         # there can be multiple studies; therefore we should check for SeriesNumber as well
         if "4dflow" in check_file.SeriesDescription.lower() and hasattr(
             check_file,
@@ -322,7 +324,7 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
             wip = check_file.SequenceName
             series = check_file.SeriesNumber
             wip_list.append({"wip": wip, "series_num": int(series), "dir": dir_name})
-            print(f"Found {wip}!")  # in, ap, fh
+            logger.info("Found %s!", wip)  # in, ap, fh
         elif (
             "ssfp" in check_file.SeriesDescription.lower()
             and hasattr(check_file, "SequenceName")
@@ -331,7 +333,7 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
             wip = check_file.SequenceName
             series = check_file.SeriesNumber
             ssfp_list.append({"wip": wip, "series_num": int(series), "dir": dir_name})
-            print("Found SSFP!")
+            logger.info("Found SSFP!")
 
     wip_list.sort(key=lambda w: w["series_num"])
     wip_list = wip_list[-4:]
