@@ -169,6 +169,7 @@ def plane_drawer(segmentation: np.ndarray, spline_points, spline_deriv) -> tuple
         ),
     )
 
+    planes = []
     # add planes
     for i in range(len(spline_points[0])):
         center_point = np.array(
@@ -192,6 +193,8 @@ def plane_drawer(segmentation: np.ndarray, spline_points, spline_deriv) -> tuple
             plane_vol[plane_vol_idx[j, 0], plane_vol_idx[j, 1], plane_vol_idx[j, 2]] = 1
 
         plane_vol = plane_vol * segmentation
+
+        planes.append(plane_vol)
 
         # inverse to scatter for better plotting
         plane_vol_idx = np.nonzero(plane_vol)
@@ -246,3 +249,5 @@ def plane_drawer(segmentation: np.ndarray, spline_points, spline_deriv) -> tuple
     # fig.layout.zaxis.scaleanchor = "x"
 
     fig.show()
+
+    return planes[5], planes[-5]  # outlet, inlet

@@ -24,8 +24,6 @@ class Patient4DFlow:
         data_directory: str,
         seg_path: str = "user",
     ) -> None:
-        inlet_value = 2
-        outlet_value = 3
         self.id = patient_id
         self.data_directory = data_directory
         self.mag_data, self.ssfp_data, self.flow_data, self.dx, self.dt = rd.import_all_dicoms(self.data_directory)
@@ -33,16 +31,10 @@ class Patient4DFlow:
         self.flow_data = np.flip(self.flow_data, axis=0)
         self.flow_data[0] *= -1
         self.flow_data = self.flow_data.copy()
-
-        # NOTE: currently not following segmentation pattern shown below... inlet/outlet numbers are temp values
         self.segmentation, self.seg_origin, self.seg_spacing = self.add_segmentation(
             seg_path,
         )
         self.mask = np.array(self.segmentation != 0).astype(np.float64).copy()
-        self.inlet = np.array(self.segmentation == inlet_value).astype(np.float64).copy()
-        self.inlet = ndimage.binary_dilation(self.inlet) * self.mask
-        self.outlet = np.array(self.segmentation == outlet_value).astype(np.float64).copy()
-        self.outlet = ndimage.binary_dilation(self.outlet) * self.mask
 
         # NOTE: TEMPORARY VALUES BEFORE I FIX EVERYTHING
         self.res = np.array(self.mag_data.shape)
@@ -51,14 +43,23 @@ class Patient4DFlow:
         """Print patient ID and data directory."""
         return f"Patient ID: {self.id} @ location {self.data_directory}"
 
-    def add_segmentation(self, path_input: str):
+    def add_segmentation(self, path_input: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Add segmentation from 3D Slicer.
+
+        Args:
+            path_input (str): path to NRRD segmentation file
+
+        Returns:
+            tuple[np.ndarray, np.ndarray, np.ndarray]: segmentation array, origin coordinates, and voxel spacing/affine
+
+        """
         seg_path = input("Enter relative path to segmentation: ") if path_input == "user" else path_input
 
         segmentation, origin, spacing = rd.import_segmentation(
             self.data_directory + seg_path,
         )
 
-        # PROBABLY GOING TO BE TEMPORARY CODE AS I WORK THINGS OUT
+        # NOTE: PROBABLY GOING TO BE TEMPORARY CODE AS I WORK THINGS OUT
         segmentation = np.transpose(segmentation, (1, 0, 2))
         segmentation = np.flip(segmentation, axis=2)
 
@@ -79,6 +80,12 @@ class Patient4DFlow:
         # back in. That sucks and is inefficient but whatever.
 
     def convert_to_vti(self, output_dir: None | str = None) -> None:
+        """Export flow velocity data to VTK ImageData format.
+
+        Args:
+            output_dir (None | str, optional): Path to vti output directory. Defaults to None to autogenerate directory.
+
+        """
         if output_dir is not None:
             output_dir = f"{self.data_directory}/{output_dir}"
         else:
@@ -139,7 +146,9 @@ class Patient4DFlow:
         pr.plot_seg_skeleton(self.segmentation, skel_image, skel_rough, self.skeleton)
 
     def draw_planes(self) -> None:
-        sm.plane_drawer(self.segmentation, self.skeleton, self.skeleton_ddx)
+        self.outlet, self.inlet = sm.plane_drawer(self.segmentation, self.skeleton, self.skeleton_ddx)
+        self.inlet = ndimage.binary_dilation(self.inlet) * self.mask
+        self.outlet = ndimage.binary_dilation(self.outlet) * self.mask
 
     def get_ste_drop(self) -> None:
         """_summary_"""
@@ -182,13 +191,14 @@ class Patient4DFlow:
             )
 
     def plot_dp(self) -> None:
-        """Function to plot the pressure drop over time. Exports as a pdf file."""
+        """Plot estimated pressure drop over time. Exports as a pdf file."""
         figure = pr.plot_dp(self.times, self.dp_STE, self.id)
         figure.savefig(f"{self.id}_STE_dP.pdf")
 
     def paraview_analysis(self) -> None:
-        """Function to run pvparaview script. This script will output a video showing the
-        velocity and pressure fields over time.
+        """Run pvpython script for post-processing.
+
+        This script will output a video showing the velocity and pressure fields over time.
         """
         subprocess.run(
             [
@@ -234,6 +244,10 @@ def main():
 
     patient.add_skeleton()
     patient.draw_planes()
+    patient.export_to_mat()
+    patient.get_ste_drop()
+    patient.export_p_field()
+    patient.plot_dp()
 
 
 if __name__ == "__main__":
