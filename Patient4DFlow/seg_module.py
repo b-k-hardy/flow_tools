@@ -69,7 +69,9 @@ def find_planes(point: np.ndarray, normal: np.ndarray) -> np.ndarray:
 
 # NOTE: this code has a few weird redundant steps that I can clean up later...
 def greedy_tsp(cost_matrix: np.ndarray, start_idx: int = 0) -> list:
-    """Function that takes inspiration from the classic traveling salesman problem, but implemented
+    """Return the path with the lowest cost using a greedy algorithm.
+
+    Function that takes inspiration from the classic traveling salesman problem, but implemented
     with an extremely greedy method. An exact solution is far from guaranteed; the outcome is heavily
     dependent on the starting index. Essentially, each step in the path is determined by finding
     whichever adjacent point is the closest.
@@ -215,17 +217,17 @@ def plane_drawer(segmentation, spline_points, spline_deriv):
         steps.append(step)
 
     sliders = [
-        dict(
-            active=10,
-            currentvalue={"prefix": "Plane: "},
-            pad={"t": 50},
-            steps=steps,
-        ),
+        {
+            "active": 10,
+            "currentvalue": {"prefix": "Plane: "},
+            "pad": {"t": 50},
+            "steps": steps,
+        },
     ]
     fig.update_layout(
-        scene=dict(
-            aspectmode="data",
-        ),
+        scene={
+            "aspectmode": "data",
+        },
         sliders=sliders,
         xaxis_fixedrange=True,
         yaxis_fixedrange=True,

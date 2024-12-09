@@ -1,5 +1,7 @@
 """Module for reading in DICOM files and converting them to numpy arrays."""
 
+from __future__ import annotations
+
 import glob
 import os
 
@@ -10,14 +12,15 @@ import pydicom
 from tqdm import tqdm
 
 
-def import_segmentation(seg_path: str) -> np.ndarray:
-    """_summary_
+def import_segmentation(seg_path: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Import segmentation from an NRRD file.
 
     Args:
-        seg_path (str): _description_
+        seg_path (str): path to the NRRD file
 
     Returns:
-        np.ndarray: _description_
+        tuple[np.ndarray, np.ndarray, np.ndarray]: segmentation, origin, spacing
+
     """
     seg_data = nrrd.read(seg_path)
     segmentation = seg_data[0]
@@ -35,7 +38,7 @@ def import_flow(
     phase_range: int = 4096,
     check: None | int = None,
 ) -> tuple[np.ndarray, np.ndarray, np.floating]:
-    """Function that imports 4D flow phase data
+    """Import 4D flow phase data, convert to velocity, and return as a 5D numpy array.
 
     Args:
         paths (tuple[str, str, str]): _description_
@@ -45,8 +48,8 @@ def import_flow(
 
     Returns:
         np.ndarray: 5-dimensional array of flow data (vel component, x, y, z, t)
-    """
 
+    """
     img5d = []
 
     for i in range(3):
@@ -94,10 +97,7 @@ def import_flow(
             timestep.sort(key=lambda s: s.SliceLocation)
             for j in range(nz):
                 img_step = timestep[j]
-                img2d = (
-                    img_step.pixel_array * img_step.RescaleSlope
-                    + img_step.RescaleIntercept
-                )
+                img2d = img_step.pixel_array * img_step.RescaleSlope + img_step.RescaleIntercept
                 img4d[:, :, j, t] = img2d
 
         # convert from phase data to velocity data in m/s
@@ -126,7 +126,7 @@ def import_flow(
     trigger_times = np.unique(trigger_times)
     dt = np.mean(np.diff(trigger_times)) * 1e-3  # make sure dt is in seconds
 
-    dx = list(img_step.PixelSpacing) + [img_step.SliceThickness]
+    dx = [*img_step.PixelSpacing, img_step.SliceThickness]
     dx = np.array([float(dx_i) for dx_i in dx]) * 1e-3  # make sure dx is in seconds
 
     return np.asarray(img5d), dx, dt
@@ -141,6 +141,7 @@ def import_mag(dicom_path: str, check: None | int = None) -> np.ndarray:
 
     Returns:
         np.array: _description_
+
     """
     # load the DICOM files
     files = []
@@ -215,6 +216,7 @@ def import_ssfp(dicom_path: str, check: None | int = None) -> np.ndarray:
 
     Returns:
         np.array: _description_
+
     """
     # load the DICOM files
     files = []
@@ -283,14 +285,16 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
 
     Returns:
         tuple[np.ndarray, np.ndarray]: magnitude data, flow data
-    """
 
+    """
     wip_list = []
     ssfp_list = []
 
     # 1. Find all DICOM directories
     dir_list = glob.glob(
-        "**/", root_dir=dir_path, recursive=True
+        "**/",
+        root_dir=dir_path,
+        recursive=True,
     )  # there might be a cleaner way to do this recursively? Without all the try except
     for dir_name in dir_list:
         print(f"Checking {dir_name}")
@@ -308,7 +312,8 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
         # I NEED TO CHECK FOR SSFP IN SERIES DESCRIPTION AND THEN IF SSFP IS FOUND I WILL CHECK FOR SLICE THICKNESS TO GRAB ACTUAL DATA
         # there can be multiple studies; therefore we should check for SeriesNumber as well
         if "4dflow" in check_file.SeriesDescription.lower() and hasattr(
-            check_file, "SequenceName"
+            check_file,
+            "SequenceName",
         ):
             wip = check_file.SequenceName
             series = check_file.SeriesNumber

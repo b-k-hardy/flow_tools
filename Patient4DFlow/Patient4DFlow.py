@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import subprocess
 from pathlib import Path
 
@@ -46,6 +48,7 @@ class Patient4DFlow:
         self.res = np.array(self.mag_data.shape)
 
     def __str__(self) -> str:
+        """Print patient ID and data directory."""
         return f"Patient ID: {self.id} @ location {self.data_directory}"
 
     def add_segmentation(self, path_input: str):
