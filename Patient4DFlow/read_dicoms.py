@@ -33,7 +33,6 @@ def import_segmentation(seg_path: str) -> tuple[np.ndarray, np.ndarray, np.ndarr
     return segmentation, origin, spacing
 
 
-# TODO(Brandon): pass in base directory so glob paths aren't so annoying...
 def import_flow(
     paths: tuple[str, str, str],
     vencs: tuple[int, int, int],
@@ -280,14 +279,16 @@ def import_ssfp(dicom_path: str, check: None | int = None) -> np.ndarray:
     return img4d
 
 
-def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
-    """Automatically walk through DICOM directory tree and imports 4D flow files.
+def find_dicom_dirs(dir_path: str) -> tuple[list[str], list[str]]:
+    """Find the relevant DICOM sub-directories.
+
+    This includes sub-directories for 4D flow phase images, 4D flow magnitude images, and SSFP images.
 
     Args:
-       dir_path (str): path to data directory
+        dir_path (str): Absolute path to the data directory (root where ALL of the DICOMs are stored)
 
     Returns:
-        tuple[np.ndarray, np.ndarray]: magnitude data, flow data
+        tuple[list[str], list[str]]: list of 4D flow directories (given by WIP), list of SSFP directories
 
     """
     wip_list = []
@@ -332,6 +333,21 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
     wip_list.sort(key=lambda w: w["series_num"])
     wip_list = wip_list[-4:]
 
+    return wip_list, ssfp_list
+
+
+def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
+    """Automatically walk through DICOM directory tree and imports 4D flow files.
+
+    Args:
+       dir_path (str): path to data directory
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: magnitude data, flow data
+
+    """
+    wip_list, ssfp_list = find_dicom_dirs(dir_path)
+
     # stupid ass initialization so linter doesn't freak out
     vencs = np.zeros(3)
     flow_paths = [""] * 3
@@ -353,6 +369,7 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
         else:
             mag_path = dir_path / dir_name
 
+    # NOTE: what the hell is this... I'm just overwriting with the most recent dir_name
     for item in ssfp_list:
         dir_name = item["dir"]
         ssfp_path = dir_name
