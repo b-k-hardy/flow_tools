@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import glob
+import logging
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import nrrd
 import numpy as np
 import pydicom
 from tqdm import tqdm
+
+logger = logging.getLogger(__name__)
 
 
 def import_segmentation(seg_path: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -54,13 +58,11 @@ def import_flow(
 
     for i in range(3):
         # load the DICOM files
-        files = []
-        print(f"glob: {paths[i]}")
+        logger.info("globbing %s", paths[i])
 
-        for fname in tqdm(glob.glob(paths[i], recursive=False)):
-            files.append(pydicom.dcmread(fname))
+        files = [pydicom.dcmread(fname) for fname in Path(paths[i]).glob("*")]
 
-        print(f"\nfile count: {len(files)}")
+        print(f"file count: {len(files)}\n")
 
         # skip files with no SliceLocation (eg scout views)
         slices = []
@@ -71,7 +73,8 @@ def import_flow(
             else:
                 skipcount = skipcount + 1
 
-        print(f"skipped, no SliceLocation: {skipcount}")
+        if skipcount > 0:
+            logger.warning("skipped, no SliceLocation: %d", skipcount)
 
         # ensure they are in the correct order
         slices.sort(key=lambda s: (s.TriggerTime, s.SliceLocation))
@@ -160,7 +163,8 @@ def import_mag(dicom_path: str, check: None | int = None) -> np.ndarray:
         else:
             skipcount = skipcount + 1
 
-    print(f"skipped, no SliceLocation: {skipcount}")
+    if skipcount > 0:
+        logger.warning("skipped, no SliceLocation: %d", skipcount)
 
     # ensure they are in the correct order
     slices.sort(key=lambda s: (s.TriggerTime, s.SliceLocation))
@@ -235,7 +239,8 @@ def import_ssfp(dicom_path: str, check: None | int = None) -> np.ndarray:
         else:
             skipcount = skipcount + 1
 
-    print(f"skipped, no SliceLocation: {skipcount}")
+    if skipcount > 0:
+        logger.warning("skipped, no SliceLocation: %d", skipcount)
 
     # ensure they are in the correct order
     slices.sort(key=lambda s: s.SliceLocation)
@@ -342,13 +347,13 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
         wip = item["wip"]
 
         if wip[-2:] == "in":  # or rl?
-            flow_paths[0] = dir_path + dir_name + "*"
+            flow_paths[0] = dir_path + dir_name
             vencs[0] = int(wip[-5:-2])
         elif wip[-2:] == "ap":
-            flow_paths[1] = dir_path + dir_name + "*"
+            flow_paths[1] = dir_path + dir_name
             vencs[1] = int(wip[-5:-2])
         elif wip[-2:] == "fh":
-            flow_paths[2] = dir_path + dir_name + "*"
+            flow_paths[2] = dir_path + dir_name
             vencs[2] = int(wip[-5:-2])
         else:
             mag_path = dir_path + dir_name + "*"

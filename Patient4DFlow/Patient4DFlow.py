@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import logging
 import subprocess
+import sys
 from pathlib import Path
 
 import matlab.engine
@@ -15,6 +17,8 @@ from tqdm import tqdm
 
 PA_TO_MMHG = 0.00750061683
 PVPYTHON_PATH = "/Applications/ParaView-5.13.1.app/Contents/bin/pvbatch"
+
+logger = logging.getLogger(__name__)
 
 
 class Patient4DFlow:
@@ -94,7 +98,7 @@ class Patient4DFlow:
         # make sure output path exists, create directory if not
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-        print("\nExporting to VTI...")
+        logger.info("Exporting to VTI...")
         for t in tqdm(range(self.flow_data.shape[-1])):
             # write velocity field one timestep at a time
             u = self.flow_data[0, :, :, :, t].copy() * self.mask
@@ -118,7 +122,7 @@ class Patient4DFlow:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
         # navigate MATLAB instance to current working directory to call custom function
-        print("Exporting velocity structs...")
+        logger.info("Exporting velocity structs...")
         eng.addpath(eng.genpath("Patient4DFlow"))
         eng.export_struct(
             output_dir + f"/{self.id}_vel.mat",
@@ -129,7 +133,7 @@ class Patient4DFlow:
             nargout=0,
         )
 
-        print("Exporting masks...")
+        logger.info("Exporting masks...")
         eng.export_masks(
             output_dir + f"/{self.id}_masks.mat",
             self.mask,
@@ -177,7 +181,7 @@ class Patient4DFlow:
         # make sure output path exists, create directory if not
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-        print("\nExporting pressure to VTI...")
+        logger.info("Exporting pressure to VTI...")
         for t in tqdm(range(self.p_STE.shape[-1])):
             # write pressure field one timestep at a time
             p = self.p_STE[:, :, :, t].copy()  # * self.mask
@@ -236,6 +240,8 @@ def full_run(patient_id, data_path, seg_path):
 
 
 def main():
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+    logger.info("Started")
     patient = Patient4DFlow(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
@@ -248,6 +254,7 @@ def main():
     patient.get_ste_drop()
     patient.export_p_field()
     patient.plot_dp()
+    logger.info("Finished")
 
 
 if __name__ == "__main__":
