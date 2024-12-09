@@ -132,9 +132,10 @@ def smooth_skeletonize(segmentation: np.ndarray) -> tuple:
     new_points = splev(u, tck)
     first_deriv = splev(u, tck, der=1)
 
-    return skel, points, new_points, first_deriv
+    return skel, points, np.asarray(new_points).T, first_deriv
 
 
+# TODO(Brandon): These type annotations are incorrect currently, but definitely what I want in the end... fix this.
 def plane_drawer(
     segmentation: np.ndarray,
     spline_points: np.ndarray,
@@ -166,9 +167,9 @@ def plane_drawer(
     # add spline as scatter plot
     fig.add_trace(
         go.Scatter3d(
-            x=spline_points[0],
-            y=spline_points[1],
-            z=spline_points[2],
+            x=spline_points[:, 0],
+            y=spline_points[:, 1],
+            z=spline_points[:, 2],
             marker={
                 "size": 4,
                 "colorscale": "Viridis",
@@ -179,13 +180,13 @@ def plane_drawer(
 
     planes = []
     # add planes
-    for i in range(len(spline_points[0])):
+    for i in range(spline_points.shape[0]):
         center_point = np.array(
-            [spline_points[0][i], spline_points[1][i], spline_points[2][i]],
+            [spline_points[i, 0], spline_points[i, 1], spline_points[i, 2]],
         )
 
         plane = find_planes(
-            np.array([spline_points[0][i], spline_points[1][i], spline_points[2][i]]),
+            np.array([spline_points[i, 0], spline_points[i, 1], spline_points[i, 2]]),
             np.array([spline_deriv[0][i], spline_deriv[1][i], spline_deriv[2][i]]),
         )
 
