@@ -115,8 +115,16 @@ def greedy_tsp(cost_matrix: np.ndarray, start_idx: int = 0) -> list:
 
 
 def smooth_skeletonize(segmentation: np.ndarray) -> tuple:
-    # scikit-image will automatically downcast, but doing it explicitly will save computation time
-    skel = skeletonize(segmentation.astype(np.uint8))
+    """Convert a binary segmentation to an array of smoothed skeleton points.
+
+    Args:
+        segmentation (np.ndarray): 3D binary segmentation array
+
+    Returns:
+        tuple: _description_
+
+    """
+    skel = skeletonize(segmentation.astype(np.uint8))  # downcast to save time
     points = np.array(np.nonzero(skel)).T
 
     distance_matrix = create_distance_matrix(points)

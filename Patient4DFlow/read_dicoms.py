@@ -133,7 +133,7 @@ def import_flow(
 
 
 def import_mag(dicom_path: str, check: None | int = None) -> np.ndarray:
-    """_summary_
+    """Import 4D magnitude data from DICOM files.
 
     Args:
         dicom_path (str): _description_
@@ -208,7 +208,7 @@ def import_mag(dicom_path: str, check: None | int = None) -> np.ndarray:
 
 
 def import_ssfp(dicom_path: str, check: None | int = None) -> np.ndarray:
-    """_summary_
+    """Import 3D steady-state free precession (SSFP) data from DICOM files.
 
     Args:
         dicom_path (str): _description_
@@ -278,7 +278,7 @@ def import_ssfp(dicom_path: str, check: None | int = None) -> np.ndarray:
 
 
 def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
-    """Function that automatically walks through DICOM directory tree and imports 4D flow files.
+    """Automatically walk through DICOM directory tree and imports 4D flow files.
 
     Args:
        dir_path (str): path to data directory
