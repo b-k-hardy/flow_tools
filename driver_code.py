@@ -1,4 +1,4 @@
-from __future__ import annotations
+"""Driver code to run analysis of 4D flow patient data and log code execution."""
 
 import logging
 import sys
@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
+    """Run and log analysis of 4D flow data."""
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     patient = patient4Dflow.patient4Dflow.Patient4DFlow(
         "Prab",
