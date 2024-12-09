@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import logging
 import subprocess
-import sys
 from pathlib import Path
 
 import matlab.engine
 import nibabel as nib
 import numpy as np
-import plot_results as pr
-import read_dicoms as rd
-import seg_module as sm
 from pyevtk.hl import imageToVTK
 from scipy import ndimage
 from tqdm import tqdm
+
+import patient4Dflow.plot_results as pr
+import patient4Dflow.read_dicoms as rd
+import patient4Dflow.seg_module as sm
 
 PA_TO_MMHG = 0.00750061683
 PVPYTHON_PATH = "/Applications/ParaView-5.13.1.app/Contents/bin/pvbatch"
@@ -253,23 +253,3 @@ def full_run(patient_id: str, data_path: str, seg_path: str) -> None:
     patient.get_ste_drop()
     patient.export_p_field()
     patient.plot_dp()
-
-
-def main():
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-    patient = Patient4DFlow(
-        "Prab",
-        "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
-        "Segmentation.nrrd",
-    )
-
-    patient.add_skeleton()
-    patient.draw_planes()
-    patient.export_to_mat()
-    patient.get_ste_drop()
-    patient.export_p_field_to_vti()
-    patient.plot_dp()
-
-
-if __name__ == "__main__":
-    main()
