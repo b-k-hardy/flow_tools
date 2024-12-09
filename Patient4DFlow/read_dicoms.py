@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import glob
 import logging
 import os
 from pathlib import Path
@@ -296,17 +295,12 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
 
     # 1. Find all DICOM directories
     # there might be a cleaner way to do this recursively? Without all the try except
-    dir_list = glob.glob(
-        "**/",
-        root_dir=dir_path,
-        recursive=True,
-    )
-    for dir_name in dir_list:
+    for dir_name in Path(dir_path).glob("**/"):
         logger.info("Checking %s", dir_name)
 
         try:
-            fname = os.listdir(dir_path + dir_name)[0]
-            check_file = pydicom.dcmread(dir_path + dir_name + fname)
+            fname = os.listdir(dir_name)[0]
+            check_file = pydicom.dcmread(dir_name / fname)
         except IndexError:
             continue
         except pydicom.errors.InvalidDicomError:
@@ -348,23 +342,23 @@ def import_all_dicoms(dir_path: str) -> tuple[np.ndarray, np.ndarray]:
         wip = item["wip"]
 
         if wip[-2:] == "in":  # or rl?
-            flow_paths[0] = dir_path + dir_name
+            flow_paths[0] = dir_path / dir_name
             vencs[0] = int(wip[-5:-2])
         elif wip[-2:] == "ap":
-            flow_paths[1] = dir_path + dir_name
+            flow_paths[1] = dir_path / dir_name
             vencs[1] = int(wip[-5:-2])
         elif wip[-2:] == "fh":
-            flow_paths[2] = dir_path + dir_name
+            flow_paths[2] = dir_path / dir_name
             vencs[2] = int(wip[-5:-2])
         else:
-            mag_path = dir_path + dir_name
+            mag_path = dir_path / dir_name
 
     for item in ssfp_list:
         dir_name = item["dir"]
         ssfp_path = dir_name
 
     mag_data = import_mag(mag_path)
-    ssfp_data = import_ssfp(dir_path + ssfp_path)
+    ssfp_data = import_ssfp(dir_path / ssfp_path)
     flow_data, dx, dt = import_flow(flow_paths, vencs)
 
     return mag_data, ssfp_data, flow_data, dx, dt
