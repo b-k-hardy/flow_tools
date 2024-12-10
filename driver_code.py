@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def full_run(patient_id: str, data_path: str, seg_path: str) -> None:
     """Run full analysis pipeline for a single patient.
 
-    This function can be imported directly into the driver code to run the full analysis pipeline. Additionally, this
+    This function can be run directly in the driver script to run the full analysis pipeline. Additionally, this
     function can be used as inspiration to show how the sub-functions are generally ordered. Of note:
     1. The first step is always to initialize the Patient4DFlow object.
     2. For any analysis, a skeleton will need to be added
