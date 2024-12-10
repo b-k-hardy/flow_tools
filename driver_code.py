@@ -3,7 +3,7 @@
 import logging
 import sys
 
-import patient4Dflow.patient_class
+from patient4Dflow import patient_class
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ def full_run(patient_id: str, data_path: str, seg_path: str) -> None:
         seg_path (str): Relative path from data_path to segmentation file
 
     """
-    patient = patient4Dflow.patient_class.Patient4DFlow(patient_id, data_path, seg_path)
+    patient = patient_class.Patient4DFlow(patient_id, data_path, seg_path)
     patient.add_skeleton()
     patient.export_vel_to_vti()
     patient.export_to_mat()
@@ -39,7 +39,7 @@ def full_run(patient_id: str, data_path: str, seg_path: str) -> None:
 def main() -> None:
     """Run and log analysis of 4D flow data."""
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-    patient = patient4Dflow.patient_class.Patient4DFlow(
+    patient = patient_class.Patient4DFlow(
         "Prab",
         "/Users/bkhardy/Dropbox (University of Michigan)/4D Flow Test Data/Prab 9.27.23/",
         "Segmentation.nrrd",
