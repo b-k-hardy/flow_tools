@@ -391,7 +391,6 @@ dependencies = [
     { name = "numpy" },
     { name = "plotly" },
     { name = "pydicom" },
-    { name = "pyevtk" },
     { name = "pynrrd" },
     { name = "pyvista" },
     { name = "scikit-image" },
@@ -408,7 +407,6 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.4.2" },
     { name = "plotly", specifier = ">=6.5.2" },
     { name = "pydicom", specifier = ">=3.0.1" },
-    { name = "pyevtk", specifier = ">=1.6.0" },
     { name = "pynrrd", specifier = ">=1.1.3" },
     { name = "pyvista", specifier = ">=0.46.5" },
     { name = "scikit-image", specifier = ">=0.26.0" },
@@ -1498,18 +1496,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d7/6f/55ea163b344c91df2e03c007bebf94781f0817656e2c037d7c5bf86c3bfc/pydicom-3.0.1.tar.gz", hash = "sha256:7b8be344b5b62493c9452ba6f5a299f78f8a6ab79786c729b0613698209603ec", size = 2884731, upload-time = "2024-09-22T02:02:43.202Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/27/a6/98651e752a49f341aa99aa3f6c8ba361728dfc064242884355419df63669/pydicom-3.0.1-py3-none-any.whl", hash = "sha256:db32f78b2641bd7972096b8289111ddab01fb221610de8d7afa835eb938adb41", size = 2376126, upload-time = "2024-09-22T02:02:41.616Z" },
-]
-
-[[package]]
-name = "pyevtk"
-version = "1.6.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/44/dd/d20c1a0c0105611b831536d2c6d9132bb83d70ed80f4b6d328c04acfeb0d/pyevtk-1.6.0.tar.gz", hash = "sha256:1f6be7876a3a005c8258861551da4fe7e44ff1a2e7ff2a93d6dc51deedfda5f4", size = 38980, upload-time = "2023-06-05T15:25:27.522Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/06/da/d57b07c565cc5f8705da436cfcc44754343416c1187d83f04d5443d5cc1a/pyevtk-1.6.0-py3-none-any.whl", hash = "sha256:057415512ab902785c72251df8f8450e4bbc9eab16677f091a4b8ee53b9cc775", size = 20521, upload-time = "2023-06-05T15:25:25.625Z" },
 ]
 
 [[package]]
