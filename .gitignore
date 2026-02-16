@@ -1,11 +1,6 @@
-/0000*
-*.vti
-*.nrrd
-*.dcm
 *.pyc
-*.json
 *.code-workspace
-*.png
-*.nii.gz
 .DS_Store
-*.pdf
+results/
+data/
+.python-version
