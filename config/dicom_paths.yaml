@@ -1,0 +1,5 @@
+data_id: "UBS"
+segmentation: "/Users/bkhardy/Downloads/Dissection_2025_karolinska/UBS_20250415/Segmentation_flow.nrrd"
+flow:
+  dicom_dir: "/Users/bkhardy/Downloads/Dissection_2025_karolinska/UBS_20250415/4DFlow/DICOM/00009C17/AAD2F3B2/AAF8F808"
+  dicom_extensions: ["0000C48A/EE0AC555", "0000C390/EE0A3A97", "0000D9AB/EE0A0B31", "0000FA02/EE0A37E4"]
