@@ -12,6 +12,7 @@ import numpy as np
 import pydicom
 import pyvista as pv
 import scipy.io as sio
+from ruamel.yaml import YAML
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
@@ -460,10 +461,10 @@ def _export_to_mat(
     # this weird format is to make sure the struct is preserved for MATLAB
     vel_output = {"v": np.array([vx_dict, vy_dict, vz_dict], dtype=object).T}
 
-    sio.savemat(f"../data/{data_id}/mat/{data_id}_vel.mat", vel_output)
+    sio.savemat(f"data/{data_id}/mat/{data_id}_vel.mat", vel_output)
 
     logger.info("Exporting MATLAB mask...")
-    sio.savemat(f"../data/{data_id}/mat/{data_id}_mask.mat", {"mask": mask})
+    sio.savemat(f"data/{data_id}/mat/{data_id}_mask.mat", {"mask": mask})
 
 
 def _export_to_h5(
@@ -482,14 +483,14 @@ def _export_to_h5(
     """
     logger.info("Exporting HDF5 velocity...")
 
-    with h5py.File(f"../data/{data_id}/h5/{data_id}_vel.h5", "w") as f:
+    with h5py.File(f"data/{data_id}/h5/{data_id}_vel.h5", "w") as f:
         f.create_dataset("v", data=flow_data)
         f.create_dataset("dx", data=dx)
         f.create_dataset("dt", data=dt)
         f.create_dataset("res", data=res)
 
     logger.info("Exporting HDF5 mask...")
-    with h5py.File(f"../data/{data_id}/h5/{data_id}_mask.h5", "w") as f:
+    with h5py.File(f"data/{data_id}/h5/{data_id}_mask.h5", "w") as f:
         f.create_dataset("mask", data=mask)
 
 
@@ -512,7 +513,7 @@ def _export_to_vti(
         # write velocity field one timestep at a time
         vel = (flow_data[:, :, :, :, t] * mask).reshape(3, -1, order="F").T
 
-        out_path = f"../data/{data_id}/vti/{data_id}_flow_{t:03d}.vti"
+        out_path = f"data/{data_id}/vti/{data_id}_flow_{t:03d}.vti"
 
         frame = pv.ImageData(dimensions=(res[:-1] + 1), spacing=dx)
         frame.cell_data["Velocity"] = vel
@@ -528,7 +529,7 @@ def export_data(
     res: np.ndarray,
     filetype: tuple[str, str, str] = ("mat", "h5", "vti"),
 ) -> None:
-    output_dir = f"../data/{data_id}"
+    output_dir = f"data/{data_id}"
     # make sure output path exists, create directory if not
     base_data_path = Path(output_dir)
     if "mat" in filetype:
@@ -549,14 +550,16 @@ def main():
     # set up logging to print to stdout
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-    # NOTE: THESE ARE THINGS YOU CAN CHANGE ########################################################################
-    data_id = "CR"
-    base_dicom_directory = (
-        "/Users/bkhardy/Downloads/Dissection_2025_karolinska/CR_20250611/4DFlow/DICOM/00009AD4/AA9D5841/AAD51FE5"
-    )
-    dicom_extensions = ["0000B33F/EE0A2F30", "000004A5/EE0A6D97", "000051BA/EE0A3B55", "0000215E/EE0A7CFB"]
-    seg_path = "/Users/bkhardy/Downloads/Dissection_2025_karolinska/CR_20250611/Segmentation_flow.nrrd"
-    ################################################################################################################
+    # read in config file for DICOM paths and other parameters
+    yaml = YAML(typ="safe")
+    config_path = Path(__file__).resolve().parent / "config" / "dicom_paths.yaml"
+    with config_path.open(encoding="utf-8") as f:
+        config = yaml.load(f)
+
+    data_id = config["data_id"]
+    base_dicom_directory = config["flow"]["dicom_dir"]
+    dicom_extensions = list(config["flow"]["dicom_extensions"])
+    seg_path = config["segmentation"]
 
     # Main reader and exporter
     flow_paths = tuple([Path(f"{base_dicom_directory}/{filename}") for filename in dicom_extensions])
