@@ -1,0 +1,5 @@
+directories:
+  vwerp: "/Users/bkhardy/Developer/GitHub/flow_tools/vwerp"
+executables:
+  pvbatch: "/Applications/ParaView-6.0.1.app/Contents/bin/pvbatch"
+  matlab: "/Applications/MATLAB_R2025b.app/bin/matlab"
