@@ -1,8 +1,10 @@
 """Module for segmentation of MRI data."""
 
+import networkx as nx
 import numpy as np
 import plotly.graph_objects as go
 from scipy.interpolate import splev, splprep
+from scipy.ndimage import binary_dilation
 from skimage.morphology import skeletonize
 
 MAX_PLANE_SIZE = 10
@@ -102,7 +104,10 @@ def generate_plane_volume(
 
     # fill in the plane mask
     for j in range(len(plane_vol_idx)):
-        plane_vol[plane_vol_idx[j, 0], plane_vol_idx[j, 1], plane_vol_idx[j, 2]] = 1
+        try:
+            plane_vol[plane_vol_idx[j, 0], plane_vol_idx[j, 1], plane_vol_idx[j, 2]] = 1
+        except IndexError:
+            continue
 
     # intersection of segmentation mask and plane mask
     plane_vol = plane_vol * segmentation
@@ -152,6 +157,37 @@ def greedy_tsp(cost_matrix: np.ndarray, start_idx: int = 0) -> list:
     return path
 
 
+def skeleton_points_to_graph(pts_ijk):
+    pts = [tuple(p) for p in pts_ijk]
+    S = set(pts)
+    G = nx.Graph()
+    for p in pts:
+        G.add_node(p)
+        i, j, k = p
+        for di in (-1, 0, 1):
+            for dj in (-1, 0, 1):
+                for dk in (-1, 0, 1):
+                    if di == dj == dk == 0:
+                        continue
+                    q = (i + di, j + dj, k + dk)
+                    if q in S:
+                        w = (di * di + dj * dj + dk * dk) ** 0.5
+                        G.add_edge(p, q, weight=w)
+    return G
+
+
+def graph_diameter_path(G):
+    # double sweep using weighted shortest paths
+    a = next(iter(G.nodes))
+    dist_a = nx.single_source_dijkstra_path_length(G, a, weight="weight")
+    b = max(dist_a, key=dist_a.get)
+
+    dist_b, paths_b = nx.single_source_dijkstra(G, b, weight="weight")
+    c = max(dist_b, key=dist_b.get)
+
+    return paths_b[c]  # ordered list of nodes from b to c
+
+
 def smooth_skeletonize(segmentation: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Convert a binary segmentation to an array of smoothed skeleton points.
 
@@ -162,7 +198,8 @@ def smooth_skeletonize(segmentation: np.ndarray) -> tuple[np.ndarray, np.ndarray
         tuple: _description_
 
     """
-    skel = skeletonize(segmentation.astype(np.uint8))  # downcast to save time
+    segmentation_dilated = binary_dilation(segmentation, iterations=5)
+    skel = skeletonize(segmentation_dilated.astype(np.uint8))  # downcast to save time
     points = np.array(np.nonzero(skel)).T
 
     distance_matrix = create_distance_matrix(points)
