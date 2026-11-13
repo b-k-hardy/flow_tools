@@ -1,5 +1,5 @@
-data_id: "UBS"
-segmentation: "/Users/bkhardy/Downloads/Dissection_2025_karolinska/UBS_20250415/Segmentation_flow.nrrd"
+data_id: "HW_2"
+segmentation: "/Users/bkhardy/Downloads/Dissection_2025_karolinska/HW_20251212/Segmentation_4dflow.nrrd"
 flow:
-  dicom_dir: "/Users/bkhardy/Downloads/Dissection_2025_karolinska/UBS_20250415/4DFlow/DICOM/00009C17/AAD2F3B2/AAF8F808"
-  dicom_extensions: ["0000C48A/EE0AC555", "0000C390/EE0A3A97", "0000D9AB/EE0A0B31", "0000FA02/EE0A37E4"]
+  dicom_dir: "/Users/bkhardy/Downloads/Dissection_2025_karolinska/HW_20251212/4DFlow/DICOM/00002D86/AA9DE1BC/AADB79EC"
+  dicom_extensions: ["00009828/EE03F492", "000018F3/EE08C48E", "0000CCED/EE500805", "00003039/EE23BCB9"]
